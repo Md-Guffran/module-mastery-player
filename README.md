@@ -1,73 +1,142 @@
-# Welcome to your Lovable project
+# Modern Course Player - Interactive Learning Platform
 
-## Project info
+A dynamic, modern educational website inspired by DeepLearning.AI's course player, built with React, TypeScript, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/7341e0d2-295b-4818-89b5-fc3f8b872d65
+## 🎯 Features
 
-## How can I edit this code?
+### 🎥 Advanced Video Player
+- **Multi-Source Support**: Play videos from YouTube, Vimeo, uploaded files (MP4, MOV, AVI, MKV), Google Drive, and any video URL
+- **Anti-Skip Protection**: Prevents users from skipping ahead until they've completed the video once
+- **Smart Seek Controls**:
+  - Disable forward skipping on first watch
+  - Allow rewinding at any time
+  - Unlock full seek controls after completion
+- **Progress Persistence**: Video progress saves automatically and resumes on refresh
 
-There are several ways of editing your application.
+### 📊 Progress Tracking
+- Real-time course completion percentage
+- Visual progress bar at the top of the page
+- Green checkmarks (✅) for completed lessons
+- Lock indicators for unreached lessons
+- Sequential lesson unlocking system
 
-**Use Lovable**
+### 📚 Resources & Notes
+- Downloadable resources (PDFs, articles, code files)
+- Lesson notes and key takeaways
+- Export notes as TXT files
+- Organized tabs for easy navigation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7341e0d2-295b-4818-89b5-fc3f8b872d65) and start prompting.
+### 🎨 Modern Design
+- Clean, professional interface
+- Gradient color scheme with purple/blue accents
+- Smooth animations and transitions
+- Responsive sidebar navigation
+- Custom video player controls
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Technical Stack
 
-**Use your preferred IDE**
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Video**: React Player (multi-source support)
+- **Animations**: Framer Motion
+- **State**: React Hooks + localStorage
+- **Build Tool**: Vite
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:8080](http://localhost:8080)
 
-Follow these steps:
+## 📝 How It Works
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Video Progress Tracking
+The app uses localStorage to persist video progress across sessions. Each lesson tracks:
+- Watched duration
+- Completion status
+- Whether seek controls are unlocked
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Anti-Skip Mechanism
+- On first watch: Users can only rewind, not skip ahead
+- Progress bar dragging is restricted to already-watched portions
+- After completing once: Full seek controls unlock
+- Visual indicator shows lock status
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Lesson Unlocking
+- First lesson of each module is always unlocked
+- Subsequent lessons unlock when previous lesson is completed
+- Locked lessons show a lock icon and are disabled
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 🎨 Customization
+
+### Adding Your Own Course Content
+
+Edit `src/data/courseData.ts` to add your modules and lessons:
+
+```typescript
+export const courseModules: Module[] = [
+  {
+    id: 'module-1',
+    title: 'Your Module Title',
+    lessons: [
+      {
+        id: 'lesson-1',
+        title: 'Your Lesson Title',
+        duration: '15:30',
+        videoUrl: 'https://youtube.com/watch?v=...',
+        videoType: 'youtube',
+        description: 'Lesson description',
+        notes: 'Your notes here...',
+        resources: [
+          {
+            id: 'resource-1',
+            title: 'Resource Title',
+            type: 'pdf',
+            url: 'https://...',
+          },
+        ],
+      },
+    ],
+  },
+];
 ```
 
-**Edit a file directly in GitHub**
+### Video Types Supported
+- `youtube`: YouTube URLs
+- `vimeo`: Vimeo URLs
+- `file`: Direct MP4/MOV/AVI/MKV files
+- `url`: Any direct video URL
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📱 Responsive Design
 
-**Use GitHub Codespaces**
+The platform is fully responsive and works seamlessly on:
+- Desktop computers
+- Tablets
+- Mobile devices
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔒 Privacy
 
-## What technologies are used for this project?
+All progress data is stored locally in the browser's localStorage. No data is sent to external servers.
 
-This project is built with:
+## 🎓 Perfect For
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Online courses
+- Educational content
+- Training programs
+- Tutorial series
+- Professional development
 
-## How can I deploy this project?
+## 📄 License
 
-Simply open [Lovable](https://lovable.dev/projects/7341e0d2-295b-4818-89b5-fc3f8b872d65) and click on Share -> Publish.
+Built with ❤️ using Lovable
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**URL**: https://lovable.dev/projects/7341e0d2-295b-4818-89b5-fc3f8b872d65
