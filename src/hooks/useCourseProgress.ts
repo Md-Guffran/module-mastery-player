@@ -23,6 +23,7 @@ export const useCourseProgress = () => {
         watchedSeconds: 0,
         totalDuration: 0,
         unlockedSeek: false,
+        watched: false,
         ...update,
       },
     }));
@@ -35,6 +36,7 @@ export const useCourseProgress = () => {
       watchedSeconds: 0,
       totalDuration: 0,
       unlockedSeek: false,
+      watched: false,
     };
   };
 

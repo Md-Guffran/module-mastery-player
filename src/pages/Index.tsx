@@ -12,6 +12,14 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// Helper function to format seconds into MM:SS
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  const formattedSeconds = remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`;
+  return `${minutes}:${formattedSeconds}`;
+};
+
 const Index = () => {
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +63,7 @@ const Index = () => {
         title: modules[0].videos[0].title,
         description: '', // Assuming description is not directly available on video, or needs to be fetched
         videoUrl: modules[0].videos[0].url, // Reverted to dynamic URL
-        duration: '0:00', // Placeholder, needs to be fetched or calculated
+        duration: 0, // Duration in seconds
         resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
         notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
       }
@@ -71,7 +79,7 @@ const Index = () => {
         title: modules[0].videos[0].title,
         description: '',
         videoUrl: modules[0].videos[0].url, // Reverted to dynamic URL
-        duration: '0:00',
+        duration: 0, // Duration in seconds
         resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
         notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
       });
@@ -83,7 +91,7 @@ const Index = () => {
     title: video.title,
     description: '', // Placeholder
     videoUrl: video.url, // Reverted to dynamic URL
-    duration: '0:00', // Placeholder
+    duration: 0, // Placeholder duration in seconds
     resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
     notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
   })));
@@ -135,7 +143,7 @@ const Index = () => {
             title: video.title,
             description: '',
             videoUrl: video.url,
-            duration: '0:00',
+            duration: 0, // Duration in seconds
             resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
             notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
           }))
@@ -170,10 +178,23 @@ const Index = () => {
                       {currentLesson.description}
                     </p>
                   )}
+                  {currentLesson.duration > 0 && (
+                    <p className="text-muted-foreground text-sm">
+                      Duration: {formatDuration(currentLesson.duration)}
+                    </p>
+                  )}
                 </div>
 
                 <VideoPlayer
                   url={currentLesson.videoUrl}
+                  lessonId={currentLesson.id}
+                  progress={getProgress(currentLesson.id)}
+                  onProgress={(update) => {
+                    if (update.duration !== undefined) {
+                      setCurrentLesson(prevLesson => prevLesson ? { ...prevLesson, duration: update.duration! } : null);
+                    }
+                    updateProgress(currentLesson.id, update);
+                  }}
                 />
 
                 {nextLesson && (

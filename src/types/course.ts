@@ -21,7 +21,7 @@ export interface Resource {
 export interface Lesson {
   id: string; // Mapped from video._id
   title: string;
-  duration: string; // Placeholder, needs to be fetched or calculated
+  duration: number; // Duration in seconds
   videoUrl: string; // Mapped from video.url
   videoType?: 'youtube' | 'vimeo' | 'file' | 'url'; // Made optional
   description?: string;
@@ -35,4 +35,5 @@ export interface CourseProgress {
   watchedSeconds: number;
   totalDuration: number;
   unlockedSeek: boolean;
+  watched: boolean;
 }
