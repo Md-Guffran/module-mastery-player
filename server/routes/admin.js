@@ -6,18 +6,28 @@ const xlsx = require('xlsx');
 const fs = require('fs');
 const User = require('../models/User');
 const Module = require('../models/Module');
+const Session = require('../models/Session'); // Import Session model
 const auth = require('../middleware/auth');
 
 const upload = multer({ dest: 'tmp/csv/' });
 
+// Helper function to check if user is admin
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ msg: 'Admin access denied' });
+  }
+};
+
 // @route   GET api/admin/stats
 // @desc    Get admin dashboard stats
-// @access  Public (Authorization removed)
-router.get('/stats', async (req, res) => {
+// @access  Admin
+router.get('/stats', auth, isAdmin, async (req, res) => {
+  console.log('Admin stats route accessed.');
   try {
-    // Authorization check removed as per user request
-
     const userCount = await User.countDocuments();
+    console.log('User count:', userCount);
     // In a real application, you would have models for videos and daily activity
     const dailyCount = 0; // Placeholder
     const mostWatchedVideos = []; // Placeholder
@@ -28,18 +38,67 @@ router.get('/stats', async (req, res) => {
       mostWatchedVideos,
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in /api/admin/stats:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/admin/users
+// @desc    Get all users
+// @access  Admin
+router.get('/users', auth, isAdmin, async (req, res) => {
+  console.log('Admin users route accessed.');
+  try {
+    const users = await User.find().select('-password');
+    console.log('Fetched users:', users.length, 'users');
+    res.json(users);
+  } catch (err) {
+    console.error('Error in /api/admin/users:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/admin/daily-activity
+// @desc    Get today's login/logout activity
+// @access  Admin
+router.get('/daily-activity', auth, isAdmin, async (req, res) => {
+  console.log('Admin daily-activity route accessed.');
+  try {
+    const startOfDayIST = new Date();
+    startOfDayIST.setHours(0, 0, 0, 0);
+    startOfDayIST.setMinutes(startOfDayIST.getMinutes() - startOfDayIST.getTimezoneOffset() + 330); // Adjust to IST (UTC+5:30)
+
+    const endOfDayIST = new Date(startOfDayIST);
+    endOfDayIST.setDate(startOfDayIST.getDate() + 1);
+
+    console.log('Start of Day IST:', startOfDayIST);
+    console.log('End of Day IST:', endOfDayIST);
+
+    const sessions = await Session.find({
+      loginTime: { $gte: startOfDayIST, $lt: endOfDayIST },
+    }).populate('userId', 'username email'); // Populate user details
+
+    console.log('Fetched sessions:', sessions.length, 'sessions');
+
+    const activity = sessions.map(session => ({
+      username: session.userId ? session.userId.username : 'Unknown',
+      email: session.userId ? session.userId.email : 'Unknown',
+      loginTime: session.loginTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      logoutTime: session.logoutTime ? session.logoutTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Still logged in',
+    }));
+
+    res.json(activity);
+  } catch (err) {
+    console.error('Error in /api/admin/daily-activity:', err.message);
     res.status(500).send('Server Error');
   }
 });
 
 // @route   POST api/admin/upload
 // @desc    Upload modules from CSV
-// @access  Public (Authorization removed)
-router.post('/upload', upload.single('file'), async (req, res) => {
+// @access  Admin
+router.post('/upload', auth, isAdmin, upload.single('file'), async (req, res) => {
   try {
-    // Authorization check removed as per user request
-
     let results = [];
     if (req.file.mimetype === 'text/csv') {
       fs.createReadStream(req.file.path)
@@ -82,8 +141,8 @@ const processUpload = async (results, req, res) => {
 
 // @route   POST api/modules
 // @desc    Create a new module
-// @access  Public (Authorization removed)
-router.post('/', async (req, res) => {
+// @access  Admin
+router.post('/', auth, isAdmin, async (req, res) => {
   try {
     const { title, videos } = req.body;
 
@@ -102,8 +161,8 @@ router.post('/', async (req, res) => {
 
 // @route   PUT api/admin/modules/:id
 // @desc    Update a module
-// @access  Public (Authorization removed)
-router.put('/modules/:id', async (req, res) => {
+// @access  Admin
+router.put('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
     const { title, videos } = req.body;
     const moduleFields = { title, videos };
@@ -127,8 +186,8 @@ router.put('/modules/:id', async (req, res) => {
 
 // @route   DELETE api/admin/modules/:id
 // @desc    Delete a module
-// @access  Public (Authorization removed)
-router.delete('/modules/:id', async (req, res) => {
+// @access  Admin
+router.delete('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
     const module = await Module.findByIdAndDelete(req.params.id);
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Session = require('../models/Session'); // Import Session model
 const auth = require('../middleware/auth');
 
 // Signup Route
@@ -43,7 +44,7 @@ router.post('/signup', async (req, res) => {
       payload,
       process.env.JWT_SECRET,
       { expiresIn: 3600 },
-      (err, token) => {
+      async (err, token) => {
         if (err) throw err;
         res.json({ token });
       }
@@ -69,9 +70,14 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
+    // Create a new session entry
+    const session = new Session({ userId: user.id, loginTime: new Date() });
+    await session.save();
+
     const payload = {
       user: {
-        id: user.id
+        id: user.id,
+        sessionId: session._id, // Store session ID in token
       }
     };
 
@@ -87,6 +93,20 @@ router.post('/signin', async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
+  }
+});
+
+// Signout Route
+router.post('/signout', auth, async (req, res) => {
+  try {
+    const { sessionId } = req.user;
+    if (sessionId) {
+      await Session.findByIdAndUpdate(sessionId, { logoutTime: new Date() });
+    }
+    res.json({ msg: 'Logged out successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 });
 
