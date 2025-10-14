@@ -5,24 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'user',
+    adminVerificationKey: ''
   });
   const navigate = useNavigate();
 
-  const { username, email, password } = formData;
+  const { username, email, password, role, adminVerificationKey } = formData;
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const onRadioChange = (value: string) => {
+    setFormData({ ...formData, role: value });
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/signup', formData);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { role, ...submissionData } = formData;
+      const res = await axios.post('http://localhost:5000/api/auth/signup', submissionData);
       console.log(res.data);
       navigate('/signin');
     } catch (err) {
@@ -75,6 +84,37 @@ const Signup: React.FC = () => {
                 required
               />
             </div>
+            <div className="grid gap-2">
+              <Label>Role</Label>
+              <RadioGroup
+                defaultValue="user"
+                className="flex"
+                onValueChange={onRadioChange}
+                name="role"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="user" id="user" />
+                  <Label htmlFor="user">User</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="admin" id="admin" />
+                  <Label htmlFor="admin">Admin</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            {role === 'admin' && (
+              <div className="grid gap-2">
+                <Label htmlFor="adminVerificationKey">Admin Verification Key</Label>
+                <Input
+                  id="adminVerificationKey"
+                  type="password"
+                  name="adminVerificationKey"
+                  value={adminVerificationKey}
+                  onChange={onChange}
+                  required
+                />
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button className="w-full" type="submit">

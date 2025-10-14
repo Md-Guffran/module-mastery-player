@@ -7,7 +7,7 @@ const auth = require('../middleware/auth');
 
 // Signup Route
 router.post('/signup', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, adminVerificationKey } = req.body;
 
   try {
     let user = await User.findOne({ email });
@@ -15,10 +15,20 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
+    let role = 'user'; // Default role
+    if (adminVerificationKey) {
+      if (adminVerificationKey === process.env.ADMIN_VERIFICATION_KEY) {
+        role = 'admin';
+      } else {
+        return res.status(401).json({ msg: 'Invalid admin verification key. Account not created.' });
+      }
+    }
+
     user = new User({
       username,
       email,
-      password
+      password,
+      role,
     });
 
     await user.save();

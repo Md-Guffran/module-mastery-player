@@ -12,14 +12,10 @@ const upload = multer({ dest: 'tmp/csv/' });
 
 // @route   GET api/admin/stats
 // @desc    Get admin dashboard stats
-// @access  Private
-router.get('/stats', auth, async (req, res) => {
+// @access  Public (Authorization removed)
+router.get('/stats', async (req, res) => {
   try {
-    // Check if user is admin
-    const user = await User.findById(req.user.id);
-    if (user.role !== 'admin') {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
+    // Authorization check removed as per user request
 
     const userCount = await User.countDocuments();
     // In a real application, you would have models for videos and daily activity
@@ -100,6 +96,49 @@ router.post('/', async (req, res) => {
     res.json(module);
   } catch (err) {
     console.error(err.stack); // Log the full error stack for debugging
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/admin/modules/:id
+// @desc    Update a module
+// @access  Public (Authorization removed)
+router.put('/modules/:id', async (req, res) => {
+  try {
+    const { title, videos } = req.body;
+    const moduleFields = { title, videos };
+
+    const module = await Module.findByIdAndUpdate(
+      req.params.id,
+      { $set: moduleFields },
+      { new: true }
+    );
+
+    if (!module) {
+      return res.status(404).json({ msg: 'Module not found' });
+    }
+
+    res.json(module);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   DELETE api/admin/modules/:id
+// @desc    Delete a module
+// @access  Public (Authorization removed)
+router.delete('/modules/:id', async (req, res) => {
+  try {
+    const module = await Module.findByIdAndDelete(req.params.id);
+
+    if (!module) {
+      return res.status(404).json({ msg: 'Module not found' });
+    }
+
+    res.json({ msg: 'Module removed' });
+  } catch (err) {
+    console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
