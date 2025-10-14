@@ -1,37 +1,19 @@
-import { FileText, Link as LinkIcon, Code, Download } from 'lucide-react';
-import { Resource } from '@/types/course';
+import { Link as LinkIcon, Download } from 'lucide-react'; // Removed FileText, Code
+import { Resource } from '@/types/course'; // Using the simplified Resource type
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ResourcesSectionProps {
   resources?: Resource[];
-  notes?: string;
+  notes?: Resource[]; // Changed to Resource[]
   lessonTitle: string;
 }
 
 export const ResourcesSection = ({ resources, notes, lessonTitle }: ResourcesSectionProps) => {
-  const getResourceIcon = (type: Resource['type']) => {
-    switch (type) {
-      case 'pdf':
-        return <FileText className="w-4 h-4" />;
-      case 'code':
-        return <Code className="w-4 h-4" />;
-      case 'article':
-      case 'link':
-        return <LinkIcon className="w-4 h-4" />;
-    }
-  };
+  // Removed getResourceIcon as 'type' is no longer available in simplified Resource
 
-  const downloadNotes = () => {
-    const element = document.createElement('a');
-    const file = new Blob([notes || ''], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${lessonTitle}-notes.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
+  // Removed downloadNotes as 'notes' is now an array of Resource objects
 
   return (
     <Card className="shadow-md">
@@ -47,20 +29,18 @@ export const ResourcesSection = ({ resources, notes, lessonTitle }: ResourcesSec
 
           <TabsContent value="resources" className="space-y-3 mt-4">
             {resources && resources.length > 0 ? (
-              resources.map((resource) => (
+              resources.map((resource, index) => (
                 <a
-                  key={resource.id}
+                  key={index} // Using index as key since _id is not available for Resource
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
                 >
-                  <div className="text-primary">{getResourceIcon(resource.type)}</div>
+                  <div className="text-primary"><LinkIcon className="w-4 h-4" /></div> {/* Generic link icon */}
                   <div className="flex-1">
                     <div className="font-medium text-sm">{resource.title}</div>
-                    <div className="text-xs text-muted-foreground capitalize">
-                      {resource.type}
-                    </div>
+                    {/* Removed resource.type display */}
                   </div>
                   <Download className="w-4 h-4 text-muted-foreground" />
                 </a>
@@ -73,16 +53,22 @@ export const ResourcesSection = ({ resources, notes, lessonTitle }: ResourcesSec
           </TabsContent>
 
           <TabsContent value="notes" className="mt-4">
-            {notes ? (
-              <div className="space-y-4">
-                <div className="prose prose-sm max-w-none p-4 rounded-lg bg-muted/50">
-                  <p className="whitespace-pre-wrap text-foreground">{notes}</p>
-                </div>
-                <Button onClick={downloadNotes} variant="outline" className="w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Notes as TXT
-                </Button>
-              </div>
+            {notes && notes.length > 0 ? (
+              notes.map((note, index) => (
+                <a
+                  key={index} // Using index as key
+                  href={note.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
+                >
+                  <div className="text-primary"><LinkIcon className="w-4 h-4" /></div> {/* Generic link icon */}
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{note.title}</div>
+                  </div>
+                  <Download className="w-4 h-4 text-muted-foreground" />
+                </a>
+              ))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 No notes available for this lesson

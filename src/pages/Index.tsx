@@ -1,23 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { CourseSidebar } from '@/components/CourseSidebar';
-import { VideoPlayer } from '@/components/VideoPlayer';
+import { VideoPlayer } from '@/components/VideoPlayer'; // Re-added VideoPlayer
 import { ResourcesSection } from '@/components/ResourcesSection';
 import { ProgressBar } from '@/components/ProgressBar';
 import { useCourseProgress } from '@/hooks/useCourseProgress';
-import { courseModules } from '@/data/courseData';
-import { Lesson } from '@/types/course';
+// import { courseModules } from '@/data/courseData'; // No longer needed
+import { Module, Lesson } from '@/types/course'; // Import Module type
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Index = () => {
-  const [currentLesson, setCurrentLesson] = useState<Lesson>(courseModules[0].lessons[0]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const res = await axios.get('/api/course');
+        setModules(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch modules:', err);
+        setError('Failed to load course modules.');
+        setLoading(false);
+      }
+    };
+    fetchModules();
+  }, []);
+
+  const initialLesson = modules.length > 0 && modules[0].videos.length > 0
+    ? {
+        id: modules[0].videos[0]._id, // Assuming _id is available from MongoDB
+        title: modules[0].videos[0].title,
+        description: '', // Assuming description is not directly available on video, or needs to be fetched
+        videoUrl: modules[0].videos[0].url, // Reverted to dynamic URL
+        duration: '0:00', // Placeholder, needs to be fetched or calculated
+        resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
+        notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
+      }
+    : null;
+
+  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(initialLesson);
   const { progress, updateProgress, getProgress, getTotalProgress } = useCourseProgress();
 
-  const allLessons = courseModules.flatMap(m => m.lessons);
-  const currentLessonIndex = allLessons.findIndex(l => l.id === currentLesson.id);
-  const nextLesson = allLessons[currentLessonIndex + 1];
-  const isNextLessonUnlocked = !nextLesson || getProgress(currentLesson.id).completed;
+  useEffect(() => {
+    if (modules.length > 0 && modules[0].videos.length > 0 && !currentLesson) {
+      setCurrentLesson({
+        id: modules[0].videos[0]._id,
+        title: modules[0].videos[0].title,
+        description: '',
+        videoUrl: modules[0].videos[0].url, // Reverted to dynamic URL
+        duration: '0:00',
+        resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
+        notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
+      });
+    }
+  }, [modules, currentLesson]);
+
+  const allLessons = modules.flatMap(m => m.videos.map(video => ({
+    id: video._id,
+    title: video.title,
+    description: '', // Placeholder
+    videoUrl: video.url, // Reverted to dynamic URL
+    duration: '0:00', // Placeholder
+    resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
+    notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
+  })));
+
+  const currentLessonIndex = currentLesson ? allLessons.findIndex(l => l.id === currentLesson.id) : -1;
+  const nextLesson = currentLessonIndex !== -1 ? allLessons[currentLessonIndex + 1] : null;
+  const isNextLessonUnlocked = !nextLesson || (currentLesson && getProgress(currentLesson.id).completed);
 
   const totalLessons = allLessons.length;
   const completedLessons = Object.values(progress).filter(p => p.completed).length;
@@ -33,10 +88,33 @@ const Index = () => {
     }
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading modules...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
+  }
+
+  if (!currentLesson) {
+    return <div className="flex justify-center items-center h-screen">No lessons available.</div>;
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <CourseSidebar
-        modules={courseModules}
+        modules={modules.map(m => ({
+          ...m,
+          lessons: m.videos.map(video => ({
+            id: video._id,
+            title: video.title,
+            description: '',
+            videoUrl: video.url,
+            duration: '0:00',
+            resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
+            notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
+          }))
+        }))}
         currentLessonId={currentLesson.id}
         progress={progress}
         onLessonSelect={handleLessonSelect}
@@ -71,9 +149,6 @@ const Index = () => {
 
                 <VideoPlayer
                   url={currentLesson.videoUrl}
-                  lessonId={currentLesson.id}
-                  progress={getProgress(currentLesson.id)}
-                  onProgress={(update) => updateProgress(currentLesson.id, update)}
                 />
 
                 {nextLesson && (

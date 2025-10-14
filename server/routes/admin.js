@@ -39,14 +39,10 @@ router.get('/stats', auth, async (req, res) => {
 
 // @route   POST api/admin/upload
 // @desc    Upload modules from CSV
-// @access  Private
-router.post('/upload', [auth, upload.single('file')], async (req, res) => {
+// @access  Public (Authorization removed)
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    // Check if user is admin
-    const user = await User.findById(req.user.id);
-    if (user.role !== 'admin') {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
+    // Authorization check removed as per user request
 
     let results = [];
     if (req.file.mimetype === 'text/csv') {
@@ -87,5 +83,25 @@ const processUpload = async (results, req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+// @route   POST api/modules
+// @desc    Create a new module
+// @access  Public (Authorization removed)
+router.post('/', async (req, res) => {
+  try {
+    const { title, videos } = req.body;
+
+    const newModule = new Module({
+      title,
+      videos,
+    });
+
+    const module = await newModule.save();
+    res.json(module);
+  } catch (err) {
+    console.error(err.stack); // Log the full error stack for debugging
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;

@@ -15,7 +15,12 @@ app.use((req, res, next) => {
 });
 
 const uri = process.env.MONGO_URI;
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(uri, {
+  // useNewUrlParser: true, // Deprecated
+  // useUnifiedTopology: true, // Deprecated
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+});
 const connection = mongoose.connection;
 connection.once('open', () => {
   console.log("MongoDB database connection established successfully");

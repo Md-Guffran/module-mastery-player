@@ -1,31 +1,32 @@
-export interface Lesson {
-  id: string;
-  _id: string;
+export interface Video {
+  _id: string; // Added for MongoDB documents
   title: string;
-  duration: string;
-  videoUrl: string;
   url: string;
-  videoType: 'youtube' | 'vimeo' | 'file' | 'url';
-  description?: string;
-  resources?: Resource[];
-  notes?: string;
   resourcesUrl?: string;
   notesUrl?: string;
 }
 
-export interface Resource {
-  id: string;
+export interface Module {
+  id?: string; // Optional for new modules
+  _id?: string; // Optional for new modules
   title: string;
-  type: 'pdf' | 'article' | 'code' | 'link';
+  videos: Video[];
+}
+
+export interface Resource {
+  title: string;
   url: string;
 }
 
-export interface Module {
-  id: string;
-  _id: string;
+export interface Lesson {
+  id: string; // Mapped from video._id
   title: string;
-  lessons: Lesson[];
-  videos: Lesson[];
+  duration: string; // Placeholder, needs to be fetched or calculated
+  videoUrl: string; // Mapped from video.url
+  videoType?: 'youtube' | 'vimeo' | 'file' | 'url'; // Made optional
+  description?: string;
+  resources?: Resource[]; // Uses the simplified Resource interface
+  notes?: Resource[]; // Uses the simplified Resource interface
 }
 
 export interface CourseProgress {
