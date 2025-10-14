@@ -9,8 +9,9 @@ import { useCourseProgress } from '@/hooks/useCourseProgress';
 // import { courseModules } from '@/data/courseData'; // No longer needed
 import { Module, Lesson } from '@/types/course'; // Import Module type
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LogOut } from 'lucide-react'; // Import LogOut icon
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Helper function to format seconds into MM:SS
 const formatDuration = (seconds: number): string => {
@@ -25,6 +26,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -37,6 +39,9 @@ const Index = () => {
           setUserRole(res.data.role);
         } catch (err) {
           console.error('Failed to fetch user data:', err);
+          // If token is invalid or user data fetch fails, clear token and redirect to signin
+          localStorage.removeItem('token');
+          navigate('/signin');
         }
       }
     };
@@ -84,7 +89,24 @@ const Index = () => {
         notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
       });
     }
-  }, [modules, currentLesson]);
+  }, [modules, currentLesson, navigate]); // Add navigate to dependency array
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await axios.post('/api/auth/signout', {}, {
+          headers: { 'x-auth-token': token },
+        });
+      } catch (err) {
+        console.error('Failed to sign out:', err);
+      } finally {
+        localStorage.removeItem('token');
+        setUserRole(null);
+        navigate('/signin');
+      }
+    }
+  };
 
   const allLessons = modules.flatMap(m => m.videos.map(video => ({
     id: video._id,
@@ -128,13 +150,18 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {userRole === 'admin' && (
-        <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex space-x-2">
+        {userRole === 'admin' && (
           <Button asChild>
             <Link to="/admin">Go to Dashboard</Link>
           </Button>
-        </div>
-      )}
+        )}
+        {localStorage.getItem('token') && ( // Show logout button if token exists
+          <Button onClick={handleLogout} variant="outline">
+            <LogOut className="w-4 h-4 mr-2" /> Logout
+          </Button>
+        )}
+      </div>
       <CourseSidebar
         modules={modules.map(m => ({
           ...m,
