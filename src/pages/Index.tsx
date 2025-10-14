@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { CourseSidebar } from '@/components/CourseSidebar';
 import { VideoPlayer } from '@/components/VideoPlayer'; // Re-added VideoPlayer
@@ -15,8 +16,23 @@ const Index = () => {
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await axios.get('/api/auth', {
+            headers: { 'x-auth-token': token },
+          });
+          setUserRole(res.data.role);
+        } catch (err) {
+          console.error('Failed to fetch user data:', err);
+        }
+      }
+    };
+
     const fetchModules = async () => {
       try {
         const res = await axios.get('/api/course');
@@ -28,6 +44,8 @@ const Index = () => {
         setLoading(false);
       }
     };
+
+    fetchUserData();
     fetchModules();
   }, []);
 
@@ -102,6 +120,13 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      {userRole === 'admin' && (
+        <div className="absolute top-4 right-4 z-10">
+          <Button asChild>
+            <Link to="/admin">Go to Dashboard</Link>
+          </Button>
+        </div>
+      )}
       <CourseSidebar
         modules={modules.map(m => ({
           ...m,
