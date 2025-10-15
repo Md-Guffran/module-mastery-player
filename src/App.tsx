@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import AdminDashboard from "./pages/AdminDashboard";
+import MyCoursesPage from "./pages/MyCoursesPage"; // Import MyCoursesPage
 import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -19,7 +20,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<MyCoursesPage />} /> {/* Display MyCoursesPage after sign-in */}
           <Route path="/signup" element={<Signup />} />
           <Route path="/signin" element={<Signin />} />
           <Route
@@ -31,6 +32,7 @@ const App = () => (
             }
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/courses/:courseId" element={<Index />} /> {/* Route for individual course details */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

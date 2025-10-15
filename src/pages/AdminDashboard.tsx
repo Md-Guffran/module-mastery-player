@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Module, Video } from '../types/course';
+import { Course, Module, Video } from '../types/course'; // Import Course type
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
@@ -15,6 +15,7 @@ import {
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'; // Import Recharts components
 
 const AdminDashboard: React.FC = () => {
+  // Stats state
   const [stats, setStats] = useState<{
     userCount: number;
     dailyCount: number;
@@ -24,16 +25,106 @@ const AdminDashboard: React.FC = () => {
     dailyCount: 0,
     mostWatchedVideos: [],
   });
+
+  // State for managing modules fetched from the API (for display/editing existing ones)
   const [modules, setModules] = useState<Module[]>([]);
-  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [] });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
 
+  // State for creating a new course with its modules and videos
+  const [newCourse, setNewCourse] = useState<Course>({ name: '', modules: [] });
+  const [currentModuleIndex, setCurrentModuleIndex] = useState<number>(0); // To track which module we are adding videos to
+
+  // Handlers for new course name input
+  const handleNewCourseNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCourse({ ...newCourse, name: e.target.value });
+  };
+
+  // Handlers for new module title input within course creation
+  const handleNewModuleTitleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const updatedModules = newCourse.modules.map((module, i) =>
+      i === index ? { ...module, title: e.target.value } : module
+    );
+    setNewCourse({ ...newCourse, modules: updatedModules });
+  };
+
+  // Handlers for new video fields within a module during course creation
+  const handleNewVideoChange = (
+    moduleIndex: number,
+    videoIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const updatedModules = [...newCourse.modules];
+    const updatedVideos = updatedModules[moduleIndex].videos.map((video, i) =>
+      i === videoIndex ? { ...video, [e.target.name]: e.target.value } : video
+    );
+    updatedModules[moduleIndex].videos = updatedVideos;
+    setNewCourse({ ...newCourse, modules: updatedModules });
+  };
+
+  // Add a new module to the course creation form
+  const addNewModule = () => {
+    setNewCourse({
+      ...newCourse,
+      modules: [...newCourse.modules, { title: '', videos: [] }],
+    });
+    setCurrentModuleIndex(newCourse.modules.length); // Set current module index to the newly added one
+  };
+
+  // Remove a module from the course creation form
+  const removeModule = (moduleIndex: number) => {
+    const updatedModules = newCourse.modules.filter((_, i) => i !== moduleIndex);
+    setNewCourse({ ...newCourse, modules: updatedModules });
+    // Adjust currentModuleIndex if the removed module was before or at the current index
+    if (currentModuleIndex >= moduleIndex) {
+      setCurrentModuleIndex(Math.max(0, currentModuleIndex - 1));
+    }
+  };
+
+  // Add a new video field to the currently selected module in the course creation form
+  const addNewVideoField = () => {
+    const updatedModules = [...newCourse.modules];
+    if (updatedModules[currentModuleIndex]) {
+      updatedModules[currentModuleIndex].videos.push({ title: '', url: '' });
+      setNewCourse({ ...newCourse, modules: updatedModules });
+    }
+  };
+
+  // Remove a video field from the currently selected module in the course creation form
+  const removeVideoField = (moduleIndex: number, videoIndex: number) => {
+    const updatedModules = [...newCourse.modules];
+    updatedModules[moduleIndex].videos = updatedModules[moduleIndex].videos.filter(
+      (_, i) => i !== videoIndex
+    );
+    setNewCourse({ ...newCourse, modules: updatedModules });
+  };
+
+  // Handler for submitting a new course
+  const handleSubmitNewCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Assuming a backend API endpoint for creating courses exists: /api/courses
+      // This endpoint should be able to handle the nested structure of Course -> Modules -> Videos
+      await axios.post('/api/courses', newCourse);
+      alert('Course created successfully');
+      setNewCourse({ name: '', modules: [] }); // Reset form
+      setCurrentModuleIndex(0); // Reset current module index
+      fetchModules(); // Refresh modules list (or fetch courses if a separate endpoint exists)
+    } catch (err: any) {
+      console.error('Failed to create course:', err);
+      alert('Failed to create course');
+    }
+  };
+
   useEffect(() => {
     fetchStats();
-    fetchModules();
+    fetchModules(); // This fetches existing modules, not courses. Might need a separate fetchCourses()
   }, []);
 
+  // Fetch stats (existing function)
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -46,6 +137,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Fetch modules (existing function, might need to be adapted or replaced by fetchCourses)
   const fetchModules = async () => {
     try {
       const res = await axios.get('/api/course'); // Using the public API
@@ -55,45 +147,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleNewModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewModule({ ...newModule, title: e.target.value });
-  };
-
-  const handleNewVideoChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const updatedVideos = newModule.videos.map((video, i) =>
-      i === index ? { ...video, [e.target.name]: e.target.value } : video
-    );
-    setNewModule({ ...newModule, videos: updatedVideos });
-  };
-
-  const addNewVideoField = () => {
-    setNewModule({
-      ...newModule,
-      videos: [...newModule.videos, { title: '', url: '' }],
-    });
-  };
-
-  const removeNewVideoField = (index: number) => {
-    const updatedVideos = newModule.videos.filter((_, i) => i !== index);
-    setNewModule({ ...newModule, videos: updatedVideos });
-  };
-
-  const handleSubmitNewModule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      // No token needed as authorization is removed
-      await axios.post('/api/admin', newModule);
-      alert('Module created successfully');
-      setNewModule({ title: '', videos: [] }); // Reset form
-      fetchModules(); // Refresh modules list
-    } catch (err) {
-      console.error('Failed to create module:', err);
-      alert('Failed to create module');
-    }
-  };
+  // --- Existing Module Management Handlers (kept for reference, but not directly used in new course creation) ---
+  // Removed: const [newModule, setNewModule] = useState<Module>({ title: '', videos: [] });
+  // Removed: const handleNewModuleChange = ...
+  // Removed: const handleNewVideoChange = ...
+  // Removed: const addNewVideoField = ...
+  // Removed: const removeNewVideoField = ...
+  // Removed: const handleSubmitNewModule = ...
 
   const handleEditModule = (module: Module) => {
     setEditingModuleId(module._id || module.id || null);
@@ -137,7 +197,6 @@ const AdminDashboard: React.FC = () => {
   const handleUpdateModule = async () => {
     if (editedModule && editedModule._id) {
       try {
-        // No token needed as authorization is removed
         await axios.put(`/api/admin/modules/${editedModule._id}`, editedModule);
         alert('Module updated successfully');
         setEditingModuleId(null);
@@ -153,7 +212,6 @@ const AdminDashboard: React.FC = () => {
   const handleDeleteModule = async (moduleId: string) => {
     if (window.confirm('Are you sure you want to delete this module?')) {
       try {
-        // No token needed as authorization is removed
         await axios.delete(`/api/admin/modules/${moduleId}`);
         alert('Module deleted successfully');
         fetchModules(); // Refresh modules list
@@ -207,6 +265,7 @@ const AdminDashboard: React.FC = () => {
         </Card>
       </div>
 
+      {/* Existing "Manage Modules" section - kept for now, but might be refactored later */}
       <div className="mt-8">
         <h2 className="text-lg font-semibold mb-4">Manage Modules</h2>
         <Accordion type="single" collapsible className="w-full">
@@ -218,7 +277,7 @@ const AdminDashboard: React.FC = () => {
                     type="text"
                     value={editedModule?.title || ''}
                     onChange={handleEditedModuleChange}
-                    onClick={(e) => e.stopPropagation()} // Prevent accordion from toggling
+                    onClick={(e) => e.stopPropagation()} // Prevent accordion to toggle
                     className="w-full"
                   />
                 ) : (
@@ -325,87 +384,124 @@ const AdminDashboard: React.FC = () => {
         </Accordion>
       </div>
 
+      {/* New section for creating a Course with nested Modules and Videos */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Create New Module</h2>
-        <form onSubmit={handleSubmitNewModule} className="space-y-4">
+        <h2 className="text-lg font-semibold mb-4">Create New Course</h2>
+        <form onSubmit={handleSubmitNewCourse} className="space-y-4">
+          {/* Course Name Input */}
           <div>
-            <Label htmlFor="moduleTitle">Module Title</Label>
+            <Label htmlFor="courseName">Course Name</Label>
             <Input
-              id="moduleTitle"
+              id="courseName"
               type="text"
-              value={newModule.title}
-              onChange={handleNewModuleChange}
+              value={newCourse.name}
+              onChange={handleNewCourseNameChange}
               required
             />
           </div>
 
-          <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
-          {newModule.videos.map((video, index) => (
-            <Card key={index} className="mb-4 p-4">
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor={`newVideoTitle-${index}`}>Video Title</Label>
-                    <Input
-                      id={`newVideoTitle-${index}`}
-                      type="text"
-                      name="title"
-                      value={video.title}
-                      onChange={(e) => handleNewVideoChange(index, e)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`newVideoUrl-${index}`}>Video URL</Label>
-                    <Input
-                      id={`newVideoUrl-${index}`}
-                      type="url"
-                      name="url"
-                      value={video.url}
-                      onChange={(e) => handleNewVideoChange(index, e)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`newResourcesUrl-${index}`}>
-                      Resources URL (Optional)
-                    </Label>
-                    <Input
-                      id={`newResourcesUrl-${index}`}
-                      type="url"
-                      name="resourcesUrl"
-                      value={video.resourcesUrl || ''}
-                      onChange={(e) => handleNewVideoChange(index, e)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`newNotesUrl-${index}`}>
-                      Notes URL (Optional)
-                    </Label>
-                    <Input
-                      id={`newNotesUrl-${index}`}
-                      type="url"
-                      name="notesUrl"
-                      value={video.notesUrl || ''}
-                      onChange={(e) => handleNewVideoChange(index, e)}
-                    />
-                  </div>
+          {/* Modules within the Course */}
+          <h3 className="text-md font-semibold mt-6 mb-2">Modules</h3>
+          {newCourse.modules.map((module, moduleIndex) => (
+            <Card key={moduleIndex} className="mb-4 p-4">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor={`moduleTitle-${moduleIndex}`}>Module Title</Label>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeModule(moduleIndex)}
+                  >
+                    Remove Module
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => removeNewVideoField(index)}
-                  className="mt-4"
-                >
-                  Remove Video
+              </CardHeader>
+              <CardContent>
+                <Input
+                  id={`moduleTitle-${moduleIndex}`}
+                  type="text"
+                  value={module.title}
+                  onChange={(e) => handleNewModuleTitleChange(moduleIndex, e)}
+                  required
+                  className="mb-4"
+                />
+
+                {/* Videos within this Module */}
+                <h4 className="text-sm font-semibold mb-2">Videos</h4>
+                {module.videos.map((video, videoIndex) => (
+                  <Card key={videoIndex} className="mb-4 p-4 bg-gray-50 dark:bg-gray-800">
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`videoTitle-${moduleIndex}-${videoIndex}`}>Video Title</Label>
+                          <Input
+                            id={`videoTitle-${moduleIndex}-${videoIndex}`}
+                            type="text"
+                            name="title"
+                            value={video.title}
+                            onChange={(e) => handleNewVideoChange(moduleIndex, videoIndex, e)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`videoUrl-${moduleIndex}-${videoIndex}`}>Video URL</Label>
+                          <Input
+                            id={`videoUrl-${moduleIndex}-${videoIndex}`}
+                            type="url"
+                            name="url"
+                            value={video.url}
+                            onChange={(e) => handleNewVideoChange(moduleIndex, videoIndex, e)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`resourcesUrl-${moduleIndex}-${videoIndex}`}>
+                            Resources URL (Optional)
+                          </Label>
+                          <Input
+                            id={`resourcesUrl-${moduleIndex}-${videoIndex}`}
+                            type="url"
+                            name="resourcesUrl"
+                            value={video.resourcesUrl || ''}
+                            onChange={(e) => handleNewVideoChange(moduleIndex, videoIndex, e)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`notesUrl-${moduleIndex}-${videoIndex}`}>
+                            Notes URL (Optional)
+                          </Label>
+                          <Input
+                            id={`notesUrl-${moduleIndex}-${videoIndex}`}
+                            type="url"
+                            name="notesUrl"
+                            value={video.notesUrl || ''}
+                            onChange={(e) => handleNewVideoChange(moduleIndex, videoIndex, e)}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => removeVideoField(moduleIndex, videoIndex)}
+                        className="mt-4"
+                      >
+                        Remove Video
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button type="button" onClick={addNewVideoField} className="mr-2">
+                  <PlusCircle className="w-4 h-4 mr-2" /> Add Video to this Module
                 </Button>
               </CardContent>
             </Card>
           ))}
-          <Button type="button" onClick={addNewVideoField} className="mr-2">
-            Add Video
+
+          <Button type="button" onClick={addNewModule} className="mr-2 mb-4">
+            <PlusCircle className="w-4 h-4 mr-2" /> Add New Module
           </Button>
-          <Button type="submit">Create Module</Button>
+
+          <Button type="submit">Create Course</Button>
         </form>
       </div>
 

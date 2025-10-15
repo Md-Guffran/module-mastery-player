@@ -13,6 +13,13 @@ export interface Module {
   videos: Video[];
 }
 
+// Define the Course interface
+export interface Course {
+  _id?: string; // Optional for new courses
+  name: string;
+  modules: Module[];
+}
+
 export interface Resource {
   title: string;
   url: string;
