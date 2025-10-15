@@ -1,3 +1,5 @@
+new
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import api from '../api';
@@ -33,8 +35,8 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const res = await api.get(`/api/progress/${lessonId}`);
-        setWatchedSeconds(res.data.watchedSeconds);
+        const res = await api.get<{ watchedSeconds: number }>(`/api/progress/${lessonId}`);
+        setWatchedSeconds(res.watchedSeconds);
       } catch (err) {
         console.error('Failed to fetch progress', err);
       }

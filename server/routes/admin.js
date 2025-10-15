@@ -248,8 +248,8 @@ router.post('/courses', auth, isAdmin, async (req, res) => {
 
 // @route   GET api/admin/courses
 // @desc    Get all courses
-// @access  Admin
-router.get('/courses', auth, isAdmin, async (req, res) => {
+// @access  Authenticated Users (Admin and regular users)
+router.get('/courses', auth, async (req, res) => {
   try {
     const courses = await Course.find().populate('modules'); // Populate modules for detailed view
     res.json(courses);
@@ -261,8 +261,8 @@ router.get('/courses', auth, isAdmin, async (req, res) => {
 
 // @route   GET api/admin/courses/:courseId/modules
 // @desc    Get modules for a specific course
-// @access  Admin
-router.get('/courses/:courseId/modules', auth, isAdmin, async (req, res) => {
+// @access  Authenticated Users (Admin and regular users)
+router.get('/courses/:courseId/modules', auth, async (req, res) => {
   try {
     const course = await Course.findById(req.params.courseId).populate('modules');
     if (!course) {
