@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Module, Video } from '../types/course';
+import api from '../api';
+import { Module, Video, UserProgress } from '../types/course';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { PlusCircle, MinusCircle, Edit, Trash2, Save, Users, BarChart, VideoIcon, Clock } from 'lucide-react'; // Import icons
+import { PlusCircle, MinusCircle, Edit, Trash2, Save, Users, BarChart, VideoIcon, Clock, CheckCircle } from 'lucide-react'; // Import icons
 import {
   Accordion,
   AccordionContent,
@@ -28,7 +28,8 @@ interface DailyActivity {
   logoutTime: string;
 }
 
-type ViewMode = 'overview' | 'users' | 'activity' | 'modules';
+
+type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress';
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<{
@@ -40,13 +41,28 @@ const AdminDashboard: React.FC = () => {
     dailyCount: 0,
     mostWatchedVideos: [],
   });
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [] });
+  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0 }] });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
+  const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
+
+  // Fetch modules to get totalDuration for progress bar
+  useEffect(() => {
+    const fetchAllModules = async () => {
+      try {
+        const res = await api.get('/api/course');
+        setModules(res.data);
+      } catch (err) {
+        console.error('Failed to fetch modules for total duration:', err);
+      }
+    };
+    fetchAllModules();
+  }, []);
 
   useEffect(() => {
     fetchStats();
@@ -58,7 +74,10 @@ const AdminDashboard: React.FC = () => {
     if (viewMode === 'activity') {
       fetchDailyActivity();
     }
-  }, [viewMode]); // Re-fetch when viewMode changes
+    if (viewMode === 'progress' || viewMode === 'student-progress') {
+      fetchUserProgress();
+    }
+  }, [viewMode, selectedStudentId]); // Re-fetch when viewMode or selectedStudentId changes
 
   // Initial fetch for overview
   useEffect(() => {
@@ -68,10 +87,7 @@ const AdminDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/stats', {
-        headers: { 'x-auth-token': token },
-      });
+      const res = await api.get('/api/admin/stats');
       setStats(res.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -80,10 +96,7 @@ const AdminDashboard: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/users', {
-        headers: { 'x-auth-token': token },
-      });
+      const res = await api.get('/api/admin/users');
       setUsers(res.data);
     } catch (err) {
       console.error('Failed to fetch users:', err);
@@ -92,19 +105,25 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDailyActivity = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/daily-activity', {
-        headers: { 'x-auth-token': token },
-      });
+      const res = await api.get('/api/admin/daily-activity');
       setDailyActivity(res.data);
     } catch (err) {
       console.error('Failed to fetch daily activity:', err);
     }
   };
 
+  const fetchUserProgress = async () => {
+    try {
+      const res = await api.get('/api/admin/progress');
+      setProgress(res.data);
+    } catch (err) {
+      console.error('Failed to fetch user progress:', err);
+    }
+  };
+
   const fetchModules = async () => {
     try {
-      const res = await axios.get('/api/course'); // Using the public API
+      const res = await api.get('/api/course'); // Using the public API
       setModules(res.data);
     } catch (err) {
       console.error('Failed to fetch modules:', err);
@@ -128,7 +147,7 @@ const AdminDashboard: React.FC = () => {
   const addNewVideoField = () => {
     setNewModule({
       ...newModule,
-      videos: [...newModule.videos, { title: '', url: '' }],
+      videos: [...newModule.videos, { title: '', url: '', duration: 0, resourcesUrl: '', notesUrl: '' }],
     });
   };
 
@@ -140,10 +159,7 @@ const AdminDashboard: React.FC = () => {
   const handleSubmitNewModule = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/admin', newModule, {
-        headers: { 'x-auth-token': token },
-      });
+      await api.post('/api/admin', newModule);
       alert('Module created successfully');
       setNewModule({ title: '', videos: [] }); // Reset form
       fetchModules(); // Refresh modules list
@@ -155,7 +171,15 @@ const AdminDashboard: React.FC = () => {
 
   const handleEditModule = (module: Module) => {
     setEditingModuleId(module._id || module.id || null);
-    setEditedModule({ ...module });
+    setEditedModule({
+      ...module,
+      videos: module.videos.map(video => ({
+        ...video,
+        duration: video.duration || 0, // Ensure duration is set
+        resourcesUrl: video.resourcesUrl || '',
+        notesUrl: video.notesUrl || '',
+      }))
+    });
   };
 
   const handleEditedModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,7 +204,7 @@ const AdminDashboard: React.FC = () => {
     if (editedModule) {
       setEditedModule({
         ...editedModule,
-        videos: [...editedModule.videos, { title: '', url: '' }],
+        videos: [...editedModule.videos, { title: '', url: '', duration: 0, resourcesUrl: '', notesUrl: '' }],
       });
     }
   };
@@ -195,10 +219,7 @@ const AdminDashboard: React.FC = () => {
   const handleUpdateModule = async () => {
     if (editedModule && editedModule._id) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.put(`/api/admin/modules/${editedModule._id}`, editedModule, {
-          headers: { 'x-auth-token': token },
-        });
+        await api.put(`/api/admin/modules/${editedModule._id}`, editedModule);
         alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
@@ -213,10 +234,7 @@ const AdminDashboard: React.FC = () => {
   const handleDeleteModule = async (moduleId: string) => {
     if (window.confirm('Are you sure you want to delete this module?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/admin/modules/${moduleId}`, {
-          headers: { 'x-auth-token': token },
-        });
+        await api.delete(`/api/admin/modules/${moduleId}`);
         alert('Module deleted successfully');
         fetchModules(); // Refresh modules list
       } catch (err) {
@@ -234,6 +252,7 @@ const AdminDashboard: React.FC = () => {
         <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'}>Overview</Button>
         <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'}>Users</Button>
         <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'}>Daily Activity</Button>
+        <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'}>Student Progress</Button>
         <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'}>Manage Modules</Button>
       </div>
 
@@ -285,9 +304,13 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-4">
             {users.length > 0 ? (
               users.map((user) => (
-                <Card key={user._id}>
+                <Card key={user._id} className="cursor-pointer hover:bg-accent" onClick={() => {
+                  setSelectedStudentId(user._id);
+                  setViewMode('student-progress');
+                }}>
                   <CardContent className="p-4">
                     <p className="font-semibold">{user.username}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
                   </CardContent>
                 </Card>
               ))
@@ -392,6 +415,19 @@ const AdminDashboard: React.FC = () => {
                                     name="notesUrl"
                                     value={video.notesUrl || ''}
                                     onChange={(e) => handleEditedVideoChange(index, e)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`editedDuration-${index}`}>
+                                    Duration (seconds)
+                                  </Label>
+                                  <Input
+                                    id={`editedDuration-${index}`}
+                                    type="number"
+                                    name="duration"
+                                    value={video.duration || 0}
+                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                    required
                                   />
                                 </div>
                               </div>
@@ -505,6 +541,19 @@ const AdminDashboard: React.FC = () => {
                           onChange={(e) => handleNewVideoChange(index, e)}
                         />
                       </div>
+                      <div>
+                        <Label htmlFor={`newDuration-${index}`}>
+                          Duration (seconds)
+                        </Label>
+                        <Input
+                          id={`newDuration-${index}`}
+                          type="number"
+                          name="duration"
+                          value={video.duration || 0}
+                          onChange={(e) => handleNewVideoChange(index, e)}
+                          required
+                        />
+                      </div>
                     </div>
                     <Button
                       type="button"
@@ -524,6 +573,71 @@ const AdminDashboard: React.FC = () => {
             </form>
           </div>
         </>
+      )}
+
+      {(viewMode === 'progress' || viewMode === 'student-progress') && (
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">
+              {selectedStudentId ? `Progress for ${users.find(u => u._id === selectedStudentId)?.username || 'Unknown Student'}` : 'All Student Progress'}
+            </h2>
+            {selectedStudentId && (
+              <Button onClick={() => { setSelectedStudentId(null); setViewMode('progress'); }} variant="outline">
+                Back to All Students
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {progress.length > 0 ? (
+              progress
+                .filter(item => (selectedStudentId ? item.user._id === selectedStudentId : true))
+                .map((item) => {
+                  // Find the total duration for the lesson from the modules data
+                  const lessonDuration = modules
+                    .flatMap(m => m.videos)
+                    .find(video => video._id === item.lessonId)?.duration || 1; // Default to 1 to avoid division by zero
+
+                  return (
+                    <Card key={item._id} className="relative">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{item.lessonTitle}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.user.username} ({item.user.email})
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Watched: {item.watchedSeconds.toFixed(0)} seconds / {lessonDuration.toFixed(0)} seconds
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Last Updated: {new Date(item.updatedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          {item.completed ? (
+                            <span className="text-green-500 flex items-center">
+                              <CheckCircle className="w-5 h-5 mr-1" /> Completed
+                            </span>
+                          ) : (
+                            <span className="text-yellow-500 flex items-center">
+                              <Clock className="w-5 h-5 mr-1" /> In Progress
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                          <div
+                            className="bg-blue-600 h-2.5 rounded-full"
+                            style={{ width: `${(item.watchedSeconds / lessonDuration) * 100}%` }}
+                          ></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+            ) : (
+              <p>No student progress found.</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

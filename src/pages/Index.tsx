@@ -95,6 +95,17 @@ const Index = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
+        // Save current lesson progress before logging out
+        if (currentLesson) {
+          const playerIframe = document.getElementById(`youtube-player-${currentLesson.id}`) as HTMLIFrameElement | null;
+          if (playerIframe && playerIframe.contentWindow && 'YT' in playerIframe.contentWindow) {
+            const player = (playerIframe.contentWindow as any).YT.get(playerIframe.id);
+            if (player && typeof player.getCurrentTime === 'function') {
+              const currentTime = player.getCurrentTime();
+              updateProgress(currentLesson.id, { watchedSeconds: currentTime, lessonTitle: currentLesson.title });
+            }
+          }
+        }
         await axios.post('/api/auth/signout', {}, {
           headers: { 'x-auth-token': token },
         });
@@ -215,12 +226,13 @@ const Index = () => {
                 <VideoPlayer
                   url={currentLesson.videoUrl}
                   lessonId={currentLesson.id}
+                  lessonTitle={currentLesson.title}
                   progress={getProgress(currentLesson.id)}
                   onProgress={(update) => {
                     if (update.duration !== undefined) {
                       setCurrentLesson(prevLesson => prevLesson ? { ...prevLesson, duration: update.duration! } : null);
                     }
-                    updateProgress(currentLesson.id, update);
+                    updateProgress(currentLesson.id, { ...update, lessonTitle: currentLesson.title });
                   }}
                 />
 

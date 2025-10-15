@@ -7,6 +7,7 @@ const fs = require('fs');
 const User = require('../models/User');
 const Module = require('../models/Module');
 const Session = require('../models/Session'); // Import Session model
+const UserProgress = require('../models/UserProgress');
 const auth = require('../middleware/auth');
 
 const upload = multer({ dest: 'tmp/csv/' });
@@ -198,6 +199,19 @@ router.delete('/modules/:id', auth, isAdmin, async (req, res) => {
     res.json({ msg: 'Module removed' });
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/admin/progress
+// @desc    Get all user progress
+// @access  Admin
+router.get('/progress', auth, isAdmin, async (req, res) => {
+  try {
+    const progress = await UserProgress.find().populate('user', 'username email');
+    res.json(progress);
+  } catch (err) {
+    console.error('Error in /api/admin/progress:', err.message);
     res.status(500).send('Server Error');
   }
 });
