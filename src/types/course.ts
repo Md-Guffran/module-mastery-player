@@ -31,6 +31,13 @@ export interface Video {
   notesUrl?: string;
 }
 
+export interface Course { // Define the Course interface
+  _id?: string;
+  title: string;
+  description: string;
+  modules: Module[];
+}
+
 export interface CourseProgress {
   lessonId: string;
   lessonTitle: string;

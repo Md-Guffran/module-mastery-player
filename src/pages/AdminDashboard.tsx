@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Module, Video, UserProgress } from '../types/course';
+import { Module, Video, UserProgress, Course } from '../types/course'; // Assuming Course type exists or will be defined
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
@@ -29,7 +29,7 @@ interface DailyActivity {
 }
 
 
-type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress';
+type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress' | 'create-course' | 'manage-course'; // Added 'manage-course' view mode
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<{
@@ -42,7 +42,8 @@ const AdminDashboard: React.FC = () => {
     mostWatchedVideos: [],
   });
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [modules, setModules] = useState<Module[]>([]);
+  const [modules, setModules] = useState<Module[]>([]); // This will now represent modules within a selected course
+  const [courses, setCourses] = useState<Course[]>([]); // State to hold all courses
   const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0 }] });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
@@ -51,23 +52,27 @@ const AdminDashboard: React.FC = () => {
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
 
-  // Fetch modules to get totalDuration for progress bar
-  useEffect(() => {
-    const fetchAllModules = async () => {
-      try {
-        const res = await api.get('/api/course');
-        setModules(res.data);
-      } catch (err) {
-        console.error('Failed to fetch modules for total duration:', err);
-      }
-    };
-    fetchAllModules();
-  }, []);
+  // State for creating a new course
+  const [newCourse, setNewCourse] = useState<Course>({ title: '', description: '', modules: [] });
+  const [selectedCourseIdForModules, setSelectedCourseIdForModules] = useState<string | null>(null); // To track which course's modules are being managed
+
+  // Fetch modules for a specific course
+  const fetchModulesForCourse = async (courseId: string) => {
+    try {
+      const res = await api.get(`/api/admin/courses/${courseId}/modules`); // Assuming an endpoint to fetch modules for a specific course
+      setModules(res.data);
+    } catch (err) {
+      console.error('Failed to fetch modules for course:', err);
+    }
+  };
 
   useEffect(() => {
     fetchStats();
-    fetchModules();
-    // Fetch users and activity only when their respective views are active
+    fetchCourses(); // Fetch courses when component mounts or viewMode changes
+    // Fetch modules only when 'modules' view is active or when creating/editing a course
+    if (viewMode === 'modules' && selectedCourseIdForModules) {
+      fetchModulesForCourse(selectedCourseIdForModules);
+    }
     if (viewMode === 'users') {
       fetchUsers();
     }
@@ -77,12 +82,12 @@ const AdminDashboard: React.FC = () => {
     if (viewMode === 'progress' || viewMode === 'student-progress') {
       fetchUserProgress();
     }
-  }, [viewMode, selectedStudentId]); // Re-fetch when viewMode or selectedStudentId changes
+  }, [viewMode, selectedStudentId, selectedCourseIdForModules]); // Re-fetch when viewMode, selectedStudentId, or selectedCourseIdForModules changes
 
   // Initial fetch for overview
   useEffect(() => {
     fetchStats();
-    fetchModules();
+    fetchCourses(); // Fetch courses on initial load
   }, []);
 
   const fetchStats = async () => {
@@ -121,15 +126,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const fetchModules = async () => {
+  const fetchCourses = async () => {
     try {
-      const res = await api.get('/api/course'); // Using the public API
-      setModules(res.data);
+      const res = await api.get('/api/admin/courses'); // Assuming an endpoint to fetch all courses
+      setCourses(res.data);
     } catch (err) {
-      console.error('Failed to fetch modules:', err);
+      console.error('Failed to fetch courses:', err);
     }
   };
 
+  // Handlers for new module creation (within a course context)
   const handleNewModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewModule({ ...newModule, title: e.target.value });
   };
@@ -156,19 +162,26 @@ const AdminDashboard: React.FC = () => {
     setNewModule({ ...newModule, videos: updatedVideos });
   };
 
+  // Handler for submitting a new module to the selected course
   const handleSubmitNewModule = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedCourseIdForModules) {
+      alert('Please select a course to add modules to.');
+      return;
+    }
     try {
-      await api.post('/api/admin', newModule);
+      // Assuming POST /api/admin/courses/:courseId/modules creates a new module for the specified course
+      await api.post(`/api/admin/courses/${selectedCourseIdForModules}/modules`, newModule);
       alert('Module created successfully');
       setNewModule({ title: '', videos: [] }); // Reset form
-      fetchModules(); // Refresh modules list
+      fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
     } catch (err) {
       console.error('Failed to create module:', err);
       alert('Failed to create module');
     }
   };
 
+  // Handlers for editing an existing module
   const handleEditModule = (module: Module) => {
     setEditingModuleId(module._id || module.id || null);
     setEditedModule({
@@ -219,11 +232,14 @@ const AdminDashboard: React.FC = () => {
   const handleUpdateModule = async () => {
     if (editedModule && editedModule._id) {
       try {
+        // Assuming PUT /api/admin/modules/:moduleId updates a module
         await api.put(`/api/admin/modules/${editedModule._id}`, editedModule);
         alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
-        fetchModules(); // Refresh modules list
+        if (selectedCourseIdForModules) {
+          fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
+        }
       } catch (err) {
         console.error('Failed to update module:', err);
         alert('Failed to update module');
@@ -234,9 +250,12 @@ const AdminDashboard: React.FC = () => {
   const handleDeleteModule = async (moduleId: string) => {
     if (window.confirm('Are you sure you want to delete this module?')) {
       try {
+        // Assuming DELETE /api/admin/modules/:moduleId deletes a module
         await api.delete(`/api/admin/modules/${moduleId}`);
         alert('Module deleted successfully');
-        fetchModules(); // Refresh modules list
+        if (selectedCourseIdForModules) {
+          fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
+        }
       } catch (err) {
         console.error('Failed to delete module:', err);
         alert('Failed to delete module');
@@ -244,16 +263,50 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // --- New Course Creation Handlers ---
+
+  const handleNewCourseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setNewCourse({ ...newCourse, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/api/admin/courses', newCourse); // Assuming POST /api/admin/courses creates a new course
+      alert('Course created successfully!');
+      setNewCourse({ title: '', description: '', modules: [] }); // Reset form
+      fetchCourses(); // Refresh the list of courses
+      setViewMode('modules'); // Navigate to module management view
+      // Optionally, set the newly created course as the selected one for module management
+      if (response.data && response.data._id) {
+        setSelectedCourseIdForModules(response.data._id);
+      }
+    } catch (err) {
+      console.error('Failed to create course:', err);
+      alert('Failed to create course');
+    }
+  };
+
+  // Handler to select a course for module management
+  const handleSelectCourseForModules = (courseId: string) => {
+    setSelectedCourseIdForModules(courseId);
+    setViewMode('modules'); // Switch to modules view
+    fetchModulesForCourse(courseId); // Fetch modules for the selected course
+  };
+
+  // --- Render Logic ---
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
-      <div className="flex space-x-4 mb-8">
+      <div className="flex space-x-4 mb-8 overflow-x-auto">
         <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'}>Overview</Button>
         <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'}>Users</Button>
         <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'}>Daily Activity</Button>
         <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'}>Student Progress</Button>
         <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'}>Manage Modules</Button>
+        <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'}>Create Course</Button>
       </div>
 
       {viewMode === 'overview' && (
@@ -344,235 +397,302 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {viewMode === 'modules' && (
-        <>
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Manage Modules</h2>
-            <Accordion type="single" collapsible className="w-full">
-              {modules.map((moduleItem) => (
-                <AccordionItem key={moduleItem._id || moduleItem.id} value={moduleItem._id || moduleItem.id || ''}>
-                  <AccordionTrigger>
-                    {editingModuleId === (moduleItem._id || moduleItem.id) ? (
-                      <Input
-                        type="text"
-                        value={editedModule?.title || ''}
-                        onChange={handleEditedModuleChange}
-                        onClick={(e) => e.stopPropagation()} // Prevent accordion from toggling
-                        className="w-full"
-                      />
-                    ) : (
-                      moduleItem.title
-                    )}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    {editingModuleId === (moduleItem._id || moduleItem.id) ? (
-                      <div className="space-y-4 p-4">
-                        <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
-                        {editedModule?.videos.map((video, index) => (
-                          <Card key={index} className="mb-4 p-4">
-                            <CardContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor={`editedVideoTitle-${index}`}>Video Title</Label>
-                                  <Input
-                                    id={`editedVideoTitle-${index}`}
-                                    type="text"
-                                    name="title"
-                                    value={video.title}
-                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`editedVideoUrl-${index}`}>Video URL</Label>
-                                  <Input
-                                    id={`editedVideoUrl-${index}`}
-                                    type="url"
-                                    name="url"
-                                    value={video.url}
-                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`editedResourcesUrl-${index}`}>
-                                    Resources URL (Optional)
-                                  </Label>
-                                  <Input
-                                    id={`editedResourcesUrl-${index}`}
-                                    type="url"
-                                    name="resourcesUrl"
-                                    value={video.resourcesUrl || ''}
-                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`editedNotesUrl-${index}`}>
-                                    Notes URL (Optional)
-                                  </Label>
-                                  <Input
-                                    id={`editedNotesUrl-${index}`}
-                                    type="url"
-                                    name="notesUrl"
-                                    value={video.notesUrl || ''}
-                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`editedDuration-${index}`}>
-                                    Duration (seconds)
-                                  </Label>
-                                  <Input
-                                    id={`editedDuration-${index}`}
-                                    type="number"
-                                    name="duration"
-                                    value={video.duration || 0}
-                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                    required
-                                  />
-                                </div>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                onClick={() => removeEditedVideoField(index)}
-                                className="mt-4"
-                              >
-                                Remove Video
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        ))}
-                        <Button type="button" onClick={addEditedVideoField} className="mr-2">
-                          <PlusCircle className="w-4 h-4 mr-2" /> Add Video
-                        </Button>
-                        <Button onClick={handleUpdateModule} className="mr-2">
-                          <Save className="w-4 h-4 mr-2" /> Save Changes
-                        </Button>
-                        <Button variant="outline" onClick={() => setEditingModuleId(null)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end space-x-2 p-4">
-                        <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem)}>
-                          <Edit className="w-4 h-4 mr-2" /> Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete
-                        </Button>
-                      </div>
-                    )}
-                    <div className="space-y-2 p-4">
-                      {moduleItem.videos.map((video) => (
-                        <div key={video._id} className="border p-2 rounded">
-                          <p className="font-semibold">{video.title}</p>
-                          <p className="text-sm text-muted-foreground">{video.url}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Manage Modules</h2>
+          {/* Course selection for module management */}
+          <div className="mb-4">
+            <Label htmlFor="courseSelect" className="mr-2">Select Course:</Label>
+            <select
+              id="courseSelect"
+              value={selectedCourseIdForModules || ''}
+              onChange={(e) => handleSelectCourseForModules(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="" disabled>--Select a Course--</option>
+              {courses.map(course => (
+                <option key={course._id} value={course._id}>{course.title}</option>
               ))}
-            </Accordion>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Create New Module</h2>
-            <form onSubmit={handleSubmitNewModule} className="space-y-4">
-              <div>
-                <Label htmlFor="moduleTitle">Module Title</Label>
-                <Input
-                  id="moduleTitle"
-                  type="text"
-                  value={newModule.title}
-                  onChange={handleNewModuleChange}
-                  required
-                />
-              </div>
-
-              <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
-              {newModule.videos.map((video, index) => (
-                <Card key={index} className="mb-4 p-4">
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor={`newVideoTitle-${index}`}>Video Title</Label>
-                        <Input
-                          id={`newVideoTitle-${index}`}
-                          type="text"
-                          name="title"
-                          value={video.title}
-                          onChange={(e) => handleNewVideoChange(index, e)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`newVideoUrl-${index}`}>Video URL</Label>
-                        <Input
-                          id={`newVideoUrl-${index}`}
-                          type="url"
-                          name="url"
-                          value={video.url}
-                          onChange={(e) => handleNewVideoChange(index, e)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`newResourcesUrl-${index}`}>
-                          Resources URL (Optional)
-                        </Label>
-                        <Input
-                          id={`newResourcesUrl-${index}`}
-                          type="url"
-                          name="resourcesUrl"
-                          value={video.resourcesUrl || ''}
-                          onChange={(e) => handleNewVideoChange(index, e)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`newNotesUrl-${index}`}>
-                          Notes URL (Optional)
-                        </Label>
-                        <Input
-                          id={`newNotesUrl-${index}`}
-                          type="url"
-                          name="notesUrl"
-                          value={video.notesUrl || ''}
-                          onChange={(e) => handleNewVideoChange(index, e)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`newDuration-${index}`}>
-                          Duration (seconds)
-                        </Label>
-                        <Input
-                          id={`newDuration-${index}`}
-                          type="number"
-                          name="duration"
-                          value={video.duration || 0}
-                          onChange={(e) => handleNewVideoChange(index, e)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => removeNewVideoField(index)}
-                      className="mt-4"
-                    >
-                      Remove Video
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-              <Button type="button" onClick={addNewVideoField} className="mr-2">
-                Add Video
+            </select>
+            {selectedCourseIdForModules && (
+              <Button variant="outline" size="sm" onClick={() => setViewMode('manage-course')} className="ml-4">
+                Manage Selected Course
               </Button>
-              <Button type="submit">Create Module</Button>
-            </form>
+            )}
           </div>
-        </>
+
+          {selectedCourseIdForModules && (
+            <>
+              <h3 className="text-md font-semibold mb-2">Modules for: {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h3>
+              <Accordion type="single" collapsible className="w-full">
+                {modules.map((moduleItem) => (
+                  <AccordionItem key={moduleItem._id || moduleItem.id} value={moduleItem._id || moduleItem.id || ''}>
+                    <AccordionTrigger>
+                      {editingModuleId === (moduleItem._id || moduleItem.id) ? (
+                        <Input
+                          type="text"
+                          value={editedModule?.title || ''}
+                          onChange={handleEditedModuleChange}
+                          onClick={(e) => e.stopPropagation()} // Prevent accordion from toggling
+                          className="w-full"
+                        />
+                      ) : (
+                        moduleItem.title
+                      )}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {editingModuleId === (moduleItem._id || moduleItem.id) ? (
+                        <div className="space-y-4 p-4">
+                          <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
+                          {editedModule?.videos.map((video, index) => (
+                            <Card key={index} className="mb-4 p-4">
+                              <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <Label htmlFor={`editedVideoTitle-${index}`}>Video Title</Label>
+                                    <Input
+                                      id={`editedVideoTitle-${index}`}
+                                      type="text"
+                                      name="title"
+                                      value={video.title}
+                                      onChange={(e) => handleEditedVideoChange(index, e)}
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`editedVideoUrl-${index}`}>Video URL</Label>
+                                    <Input
+                                      id={`editedVideoUrl-${index}`}
+                                      type="url"
+                                      name="url"
+                                      value={video.url}
+                                      onChange={(e) => handleEditedVideoChange(index, e)}
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`editedResourcesUrl-${index}`}>
+                                      Resources URL (Optional)
+                                    </Label>
+                                    <Input
+                                      id={`editedResourcesUrl-${index}`}
+                                      type="url"
+                                      name="resourcesUrl"
+                                      value={video.resourcesUrl || ''}
+                                      onChange={(e) => handleEditedVideoChange(index, e)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`editedNotesUrl-${index}`}>
+                                      Notes URL (Optional)
+                                    </Label>
+                                    <Input
+                                      id={`editedNotesUrl-${index}`}
+                                      type="url"
+                                      name="notesUrl"
+                                      value={video.notesUrl || ''}
+                                      onChange={(e) => handleEditedVideoChange(index, e)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`editedDuration-${index}`}>
+                                      Duration (seconds)
+                                    </Label>
+                                    <Input
+                                      id={`editedDuration-${index}`}
+                                      type="number"
+                                      name="duration"
+                                      value={video.duration || 0}
+                                      onChange={(e) => handleEditedVideoChange(index, e)}
+                                      required
+                                    />
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  onClick={() => removeEditedVideoField(index)}
+                                  className="mt-4"
+                                >
+                                  Remove Video
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          <Button type="button" onClick={addEditedVideoField} className="mr-2">
+                            <PlusCircle className="w-4 h-4 mr-2" /> Add Video
+                          </Button>
+                          <Button onClick={handleUpdateModule} className="mr-2">
+                            <Save className="w-4 h-4 mr-2" /> Save Changes
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditingModuleId(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end space-x-2 p-4">
+                          <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem)}>
+                            <Edit className="w-4 h-4 mr-2" /> Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')}>
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          </Button>
+                        </div>
+                      )}
+                      <div className="space-y-2 p-4">
+                        {moduleItem.videos.map((video) => (
+                          <div key={video._id} className="border p-2 rounded">
+                            <p className="font-semibold">{video.title}</p>
+                            <p className="text-sm text-muted-foreground">{video.url}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold mb-4">Create New Module for {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h2>
+                <form onSubmit={handleSubmitNewModule} className="space-y-4">
+                  <div>
+                    <Label htmlFor="moduleTitle">Module Title</Label>
+                    <Input
+                      id="moduleTitle"
+                      type="text"
+                      value={newModule.title}
+                      onChange={handleNewModuleChange}
+                      required
+                    />
+                  </div>
+
+                  <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
+                  {newModule.videos.map((video, index) => (
+                    <Card key={index} className="mb-4 p-4">
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`newVideoTitle-${index}`}>Video Title</Label>
+                            <Input
+                              id={`newVideoTitle-${index}`}
+                              type="text"
+                              name="title"
+                              value={video.title}
+                              onChange={(e) => handleNewVideoChange(index, e)}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`newVideoUrl-${index}`}>Video URL</Label>
+                            <Input
+                              id={`newVideoUrl-${index}`}
+                              type="url"
+                              name="url"
+                              value={video.url}
+                              onChange={(e) => handleNewVideoChange(index, e)}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`newResourcesUrl-${index}`}>
+                              Resources URL (Optional)
+                            </Label>
+                            <Input
+                              id={`newResourcesUrl-${index}`}
+                              type="url"
+                              name="resourcesUrl"
+                              value={video.resourcesUrl || ''}
+                              onChange={(e) => handleNewVideoChange(index, e)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`newNotesUrl-${index}`}>
+                              Notes URL (Optional)
+                            </Label>
+                            <Input
+                              id={`newNotesUrl-${index}`}
+                              type="url"
+                              name="notesUrl"
+                              value={video.notesUrl || ''}
+                              onChange={(e) => handleNewVideoChange(index, e)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`newDuration-${index}`}>
+                              Duration (seconds)
+                            </Label>
+                            <Input
+                              id={`newDuration-${index}`}
+                              type="number"
+                              name="duration"
+                              value={video.duration || 0}
+                              onChange={(e) => handleNewVideoChange(index, e)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => removeNewVideoField(index)}
+                          className="mt-4"
+                        >
+                          Remove Video
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button type="button" onClick={addNewVideoField} className="mr-2">
+                    Add Video
+                  </Button>
+                  <Button type="submit">Create Module</Button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {viewMode === 'create-course' && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Create New Course</h2>
+          <form onSubmit={handleCreateCourse} className="space-y-4">
+            <div>
+              <Label htmlFor="courseTitle">Course Title</Label>
+              <Input
+                id="courseTitle"
+                type="text"
+                name="title"
+                value={newCourse.title}
+                onChange={handleNewCourseChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="courseDescription">Course Description</Label>
+              <textarea
+                id="courseDescription"
+                name="description"
+                value={newCourse.description}
+                onChange={handleNewCourseChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                required
+              />
+            </div>
+            <Button type="submit">Create Course</Button>
+            <Button type="button" variant="outline" onClick={() => setViewMode('overview')}>Cancel</Button>
+          </form>
+        </div>
+      )}
+
+      {viewMode === 'manage-course' && selectedCourseIdForModules && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Manage Course: {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h2>
+          <Button variant="outline" onClick={() => setViewMode('modules')} className="mb-4">
+            Back to Module List
+          </Button>
+          {/* This section could potentially show course details and allow editing them */}
+          {/* For now, it just serves as a confirmation and a way to go back */}
+        </div>
       )}
 
       {(viewMode === 'progress' || viewMode === 'student-progress') && (
