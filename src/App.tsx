@@ -9,6 +9,7 @@ import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import AdminDashboard from "./pages/AdminDashboard";
 import PrivateRoute from "./components/PrivateRoute";
+import CoursePlayer from "./pages/CoursePlayer"; // Import CoursePlayer
 // import CoursesPage from "./pages/Courses"; // Removed as Index.tsx now handles course listing
 
 const queryClient = new QueryClient();
@@ -26,7 +27,7 @@ const App = () => (
           <Route
             path="/admin"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredRole="admin">
                 <AdminDashboard />
               </PrivateRoute>
             }
@@ -34,13 +35,8 @@ const App = () => (
           {/* Removed the /courses route as Index.tsx now handles course listing */}
           {/* <Route path="/courses" element={<CoursesPage />} /> */}
           
-          {/* The /course-player/:courseId route might still be relevant if Index.tsx
-              navigates to a specific course player view via URL parameter,
-              but for now, Index.tsx handles the selection internally.
-              If Index.tsx is the sole entry point, this route might be redundant
-              or need to be handled by Index.tsx itself.
-              For now, keeping it as a placeholder if direct access is needed. */}
-          <Route path="/course-player/:courseId" element={<Index />} /> {/* Redirecting to Index for now */}
+          {/* Route for the Course Player page */}
+          <Route path="/course-player/:courseTitle" element={<PrivateRoute><CoursePlayer /></PrivateRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

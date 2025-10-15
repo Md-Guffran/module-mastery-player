@@ -59,8 +59,8 @@ const AdminDashboard: React.FC = () => {
   // Fetch modules for a specific course
   const fetchModulesForCourse = async (courseId: string) => {
     try {
-      const res = await api.get(`/api/admin/courses/${courseId}/modules`); // Assuming an endpoint to fetch modules for a specific course
-      setModules(res.data);
+      const res = await api.get<Module[]>(`/api/admin/courses/${courseId}/modules`); // Assuming an endpoint to fetch modules for a specific course
+      setModules(res);
     } catch (err) {
       console.error('Failed to fetch modules for course:', err);
     }
@@ -92,8 +92,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get('/api/admin/stats');
-      setStats(res.data);
+      const res = await api.get<{ userCount: number; dailyCount: number; mostWatchedVideos: string[] }>('/api/admin/stats');
+      setStats(res);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
@@ -101,8 +101,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/api/admin/users');
-      setUsers(res.data);
+      const res = await api.get<User[]>('/api/admin/users');
+      setUsers(res);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -110,8 +110,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDailyActivity = async () => {
     try {
-      const res = await api.get('/api/admin/daily-activity');
-      setDailyActivity(res.data);
+      const res = await api.get<DailyActivity[]>('/api/admin/daily-activity');
+      setDailyActivity(res);
     } catch (err) {
       console.error('Failed to fetch daily activity:', err);
     }
@@ -119,8 +119,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchUserProgress = async () => {
     try {
-      const res = await api.get('/api/admin/progress');
-      setProgress(res.data);
+      const res = await api.get<UserProgress[]>('/api/admin/progress');
+      setProgress(res);
     } catch (err) {
       console.error('Failed to fetch user progress:', err);
     }
@@ -128,8 +128,8 @@ const AdminDashboard: React.FC = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await api.get('/api/admin/courses'); // Assuming an endpoint to fetch all courses
-      setCourses(res.data);
+      const res = await api.get<Course[]>('/api/admin/courses'); // Assuming an endpoint to fetch all courses
+      setCourses(res);
     } catch (err) {
       console.error('Failed to fetch courses:', err);
     }
@@ -171,7 +171,7 @@ const AdminDashboard: React.FC = () => {
     }
     try {
       // Assuming POST /api/admin/courses/:courseId/modules creates a new module for the specified course
-      await api.post(`/api/admin/courses/${selectedCourseIdForModules}/modules`, newModule);
+      const res = await api.post<Module>(`/api/admin/courses/${selectedCourseIdForModules}/modules`, newModule);
       alert('Module created successfully');
       setNewModule({ title: '', videos: [] }); // Reset form
       fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
@@ -233,7 +233,7 @@ const AdminDashboard: React.FC = () => {
     if (editedModule && editedModule._id) {
       try {
         // Assuming PUT /api/admin/modules/:moduleId updates a module
-        await api.put(`/api/admin/modules/${editedModule._id}`, editedModule);
+        const res = await api.put<Module>(`/api/admin/modules/${editedModule._id}`, editedModule);
         alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
@@ -251,7 +251,7 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this module?')) {
       try {
         // Assuming DELETE /api/admin/modules/:moduleId deletes a module
-        await api.delete(`/api/admin/modules/${moduleId}`);
+        const res = await api.delete<void>(`/api/admin/modules/${moduleId}`);
         alert('Module deleted successfully');
         if (selectedCourseIdForModules) {
           fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
@@ -272,14 +272,14 @@ const AdminDashboard: React.FC = () => {
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post('/api/admin/courses', newCourse); // Assuming POST /api/admin/courses creates a new course
+      const response = await api.post<Course>('/api/admin/courses', newCourse); // Assuming POST /api/admin/courses creates a new course
       alert('Course created successfully!');
       setNewCourse({ title: '', description: '', modules: [] }); // Reset form
       fetchCourses(); // Refresh the list of courses
       setViewMode('modules'); // Navigate to module management view
       // Optionally, set the newly created course as the selected one for module management
-      if (response.data && response.data._id) {
-        setSelectedCourseIdForModules(response.data._id);
+      if (response && response._id) {
+        setSelectedCourseIdForModules(response._id);
       }
     } catch (err) {
       console.error('Failed to create course:', err);
