@@ -177,7 +177,7 @@ const Index = () => {
         modules={modules.map(m => ({
           ...m,
           lessons: m.videos.map(video => ({
-            id: video._id,
+            id: video._id,    
             title: video.title,
             description: '',
             videoUrl: video.url,

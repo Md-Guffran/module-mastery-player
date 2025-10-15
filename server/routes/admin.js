@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Module = require('../models/Module');
 const Session = require('../models/Session'); // Import Session model
 const UserProgress = require('../models/UserProgress');
+const Course = require('../models/Course'); // Import the new Course model
 const auth = require('../middleware/auth');
 
 const upload = multer({ dest: 'tmp/csv/' });
@@ -140,10 +141,10 @@ const processUpload = async (results, req, res) => {
   }
 };
 
-// @route   POST api/modules
+// @route   POST api/admin/modules
 // @desc    Create a new module
 // @access  Admin
-router.post('/', auth, isAdmin, async (req, res) => {
+router.post('/modules', auth, isAdmin, async (req, res) => { // Changed route to /modules to be more specific
   try {
     const { title, videos } = req.body;
 
@@ -215,5 +216,99 @@ router.get('/progress', auth, isAdmin, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// --- New routes for Course Management ---
+
+// @route   POST api/admin/courses
+// @desc    Create a new course
+// @access  Admin
+router.post('/courses', auth, isAdmin, async (req, res) => {
+  try {
+    const { title, description, modules } = req.body;
+
+    // Basic validation
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Course title and description are required.' });
+    }
+
+    const newCourse = new Course({
+      title,
+      description,
+      modules: modules || [], // Initialize with empty modules array if not provided
+    });
+
+    await newCourse.save(); // Save to database
+
+    res.status(201).json(newCourse); // Respond with the created course
+  } catch (error) {
+    console.error('Error creating course:', error);
+    res.status(500).json({ message: 'Server error while creating course.' });
+  }
+});
+
+// @route   GET api/admin/courses
+// @desc    Get all courses
+// @access  Admin
+router.get('/courses', auth, isAdmin, async (req, res) => {
+  try {
+    const courses = await Course.find().populate('modules'); // Populate modules for detailed view
+    res.json(courses);
+  } catch (err) {
+    console.error('Error fetching courses:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/admin/courses/:courseId/modules
+// @desc    Get modules for a specific course
+// @access  Admin
+router.get('/courses/:courseId/modules', auth, isAdmin, async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.courseId).populate('modules');
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+    res.json(course.modules);
+  } catch (err) {
+    console.error('Error fetching modules for course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   POST api/admin/courses/:courseId/modules
+// @desc    Add a module to a course
+// @access  Admin
+router.post('/courses/:courseId/modules', auth, isAdmin, async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    const { title, videos } = req.body;
+
+    // Create new module
+    const newModule = new Module({
+      title,
+      videos
+    });
+
+    // Save the module
+    const savedModule = await newModule.save();
+
+    // Add module reference to course
+    course.modules.push(savedModule._id);
+    await course.save();
+
+    // Return the populated course
+    const updatedCourse = await Course.findById(req.params.courseId).populate('modules');
+    res.json(updatedCourse);
+  } catch (err) {
+    console.error('Error adding module to course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+console.log('Admin routes file loaded successfully!');
 
 module.exports = router;
