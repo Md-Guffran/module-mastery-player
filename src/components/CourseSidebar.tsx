@@ -97,10 +97,7 @@ export const CourseSidebar = ({
                         <div className="font-medium text-sm leading-tight">
                           {lesson.title}
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>{lesson.duration}</span>
-                        </div>
+                
                       </div>
                     </Button>
                   );

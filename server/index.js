@@ -24,7 +24,7 @@ mongoose.connect(uri, {
 const connection = mongoose.connection;
 connection.once('open', () => {
   console.log("MongoDB database connection established successfully");
-})
+});
 
 app.get('/', (req, res) => {
   res.send('Server is running');
@@ -34,6 +34,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/course', require('./routes/course'));
+app.use('/api/progress', require('./routes/progress'));
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
