@@ -43,7 +43,7 @@ const CoursePlayer = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await api.get('/api/auth', {
+          const res = await api.get('/auth', {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
@@ -57,7 +57,7 @@ const CoursePlayer = () => {
 
     const fetchCourseData = async () => {
       try {
-        const res = await api.get(`/api/course/${courseTitle}`); // Fetch a single course by title
+        const res = await api.get(`/course/${courseTitle}`); // Fetch a single course by title
         setModules(res.data.modules); // Extract modules from the course object
         setLoading(false);
       } catch (err) {
