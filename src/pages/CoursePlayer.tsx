@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/config';
 
 // Helper function to format seconds into MM:SS
 const formatDuration = (seconds: number): string => {
@@ -33,7 +34,7 @@ const CoursePlayer = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('/api/auth', {
+          const res = await axios.get(`${API_BASE_URL}/api/auth`, {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
