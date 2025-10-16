@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { API_BASE_URL } from '@/config';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ const Signup: React.FC = () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { role, ...submissionData } = formData;
-      const res = await axios.post('http://localhost:5000/api/auth/signup', submissionData);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/signup`, submissionData);
       console.log(res.data);
       navigate('/signin');
     } catch (err) {
