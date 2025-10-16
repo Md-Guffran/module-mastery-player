@@ -45,7 +45,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
 
   // If no user role is found (not authenticated)
   if (!userRole) {
-    alert('Access denied. Please sign in to view this page.');
+    // alert('Access denied. Please sign in to view this page.');
     return <Navigate to="/signin" />;
   }
 
