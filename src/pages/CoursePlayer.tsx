@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom'; // Import useParams
-import axios from 'axios';
+import api from '../apiClient';
 import { CourseSidebar } from '@/components/CourseSidebar';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { ResourcesSection } from '@/components/ResourcesSection';
@@ -11,6 +11,16 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+
+declare global {
+  interface Window {
+    YT: {
+      Player: new (element: string | HTMLElement, options: YT.PlayerOptions) => YT.Player;
+      PlayerState: typeof YT.PlayerState;
+      get: (id: string) => YT.Player;
+    };
+  }
+}
 
 // Helper function to format seconds into MM:SS
 const formatDuration = (seconds: number): string => {
@@ -33,7 +43,7 @@ const CoursePlayer = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('/api/auth', {
+          const res = await api.get('/api/auth', {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
@@ -47,7 +57,7 @@ const CoursePlayer = () => {
 
     const fetchCourseData = async () => {
       try {
-        const res = await axios.get(`/api/course/${courseTitle}`); // Fetch a single course by title
+        const res = await api.get(`/api/course/${courseTitle}`); // Fetch a single course by title
         setModules(res.data.modules); // Extract modules from the course object
         setLoading(false);
       } catch (err) {
@@ -101,15 +111,15 @@ const CoursePlayer = () => {
       try {
         if (currentLesson) {
           const playerIframe = document.getElementById(`youtube-player-${currentLesson.id}`) as HTMLIFrameElement | null;
-          if (playerIframe && playerIframe.contentWindow && 'YT' in playerIframe.contentWindow) {
-            const player = (playerIframe.contentWindow as any).YT.get(playerIframe.id);
+          if (playerIframe && playerIframe.contentWindow && playerIframe.contentWindow.YT) {
+            const player = playerIframe.contentWindow.YT.get(playerIframe.id);
             if (player && typeof player.getCurrentTime === 'function') {
               const currentTime = player.getCurrentTime();
               updateProgress(currentLesson.id, { watchedSeconds: currentTime, lessonTitle: currentLesson.title });
             }
           }
         }
-        await axios.post('/api/auth/signout', {}, {
+        await api.post('/api/auth/signout', {}, {
           headers: { 'x-auth-token': token },
         });
       } catch (err) {

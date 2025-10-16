@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { Course } from '@/types/course'; // Import Course type
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const Index = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('/api/auth', {
+          const res = await api.get('/api/auth', {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
@@ -34,7 +34,7 @@ const Index = () => {
 
     const fetchCourses = async () => {
       try {
-        const res = await axios.get('/api/course'); // Fetch all courses
+        const res = await api.get('/api/course'); // Fetch all courses
         setCourses(res.data);
         setLoading(false);
       } catch (err) {
@@ -52,7 +52,7 @@ const Index = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        await axios.post('/api/auth/signout', {}, {
+        await api.post('/api/auth/signout', {}, {
           headers: { 'x-auth-token': token },
         });
       } catch (err) {

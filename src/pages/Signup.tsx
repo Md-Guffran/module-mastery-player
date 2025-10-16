@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../apiClient';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ const Signup: React.FC = () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { role, ...submissionData } = formData;
-      const res = await axios.post(`${API_BASE_URL}/api/auth/signup`, submissionData);
+      const res = await api.post('/api/auth/signup', submissionData);
       console.log(res.data);
       navigate('/signin');
     } catch (err) {
