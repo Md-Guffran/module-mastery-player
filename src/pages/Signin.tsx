@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { API_BASE_URL } from '@/config';
 
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +22,7 @@ const Signin: React.FC = () => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/signin', formData);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/signin`, formData);
       console.log(res.data);
       // Store the token in localStorage or context
       localStorage.setItem('token', res.data.token);
