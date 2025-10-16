@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from '../components/ThemeToggle'; // Import ThemeToggle
 
 const Index = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -74,7 +75,7 @@ const Index = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="absolute top-4 right-4 z-10 flex space-x-2">
+      <div className="absolute top-4 right-4 z-10 flex space-x-2 items-center"> {/* Added items-center for vertical alignment */}
         {userRole === 'admin' && (
           <Button asChild>
             <Link to="/admin">Go to Dashboard</Link>
@@ -85,6 +86,7 @@ const Index = () => {
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>
         )}
+        <ThemeToggle /> {/* Add ThemeToggle here */}
       </div>
       <h1 className="text-4xl font-bold text-center mb-10 text-foreground">Available Courses</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

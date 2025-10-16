@@ -312,31 +312,31 @@ const AdminDashboard: React.FC = () => {
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="bg-blue-100 dark:bg-blue-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-foreground">
               <CardTitle className="text-sm font-medium">Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-foreground">
               <div className="text-2xl font-bold">{stats.userCount}</div>
               <p className="text-xs text-muted-foreground">Total registered users</p>
             </CardContent>
           </Card>
           <Card className="bg-green-100 dark:bg-green-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-foreground">
               <CardTitle className="text-sm font-medium">Daily Activity</CardTitle>
               <BarChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-foreground">
               <div className="text-2xl font-bold">{stats.dailyCount}</div>
               <p className="text-xs text-muted-foreground">Users active today (placeholder)</p>
             </CardContent>
           </Card>
           <Card className="bg-purple-100 dark:bg-purple-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-foreground">
               <CardTitle className="text-sm font-medium">Most Watched Videos</CardTitle>
               <VideoIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-foreground">
               <ul className="list-disc list-inside text-sm">
                 {stats.mostWatchedVideos && stats.mostWatchedVideos.length > 0 ? (
                   stats.mostWatchedVideos.map((video, index) => (
@@ -357,7 +357,7 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-4">
             {users.length > 0 ? (
               users.map((user) => (
-                <Card key={user._id} className="cursor-pointer hover:bg-accent" onClick={() => {
+                <Card key={user._id} className="cursor-pointer hover:bg-accent text-foreground" onClick={() => {
                   setSelectedStudentId(user._id);
                   setViewMode('student-progress');
                 }}>
@@ -380,7 +380,7 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-4">
             {dailyActivity.length > 0 ? (
               dailyActivity.map((activity, index) => (
-                <Card key={index}>
+                <Card key={index} className="text-foreground">
                   <CardContent className="p-4">
                     <p className="font-semibold">{activity.username}</p>
                     <p className="text-sm text-muted-foreground">Email: {activity.email}</p>
@@ -401,12 +401,15 @@ const AdminDashboard: React.FC = () => {
           <h2 className="text-lg font-semibold mb-4">Manage Modules</h2>
           {/* Course selection for module management */}
           <div className="mb-4">
-            <Label htmlFor="courseSelect" className="mr-2">Select Course:</Label>
+            <Label htmlFor="courseSelect" className="mr-2 dark:text-gray-200">Select Course:</Label>
             <select
               id="courseSelect"
               value={selectedCourseIdForModules || ''}
               onChange={(e) => handleSelectCourseForModules(e.target.value)}
-              className="p-2 border rounded"
+              className="p-2 border rounded 
+               bg-white text-gray-900 border-gray-300 
+               focus:ring-indigo-500 focus:border-indigo-500
+               dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
             >
               <option value="" disabled>--Select a Course--</option>
               {courses.map(course => (
@@ -444,7 +447,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="space-y-4 p-4">
                           <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
                           {editedModule?.videos.map((video, index) => (
-                            <Card key={index} className="mb-4 p-4">
+                            <Card key={index} className="mb-4 p-4 text-foreground">
                               <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
@@ -567,7 +570,7 @@ const AdminDashboard: React.FC = () => {
 
                   <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
                   {newModule.videos.map((video, index) => (
-                    <Card key={index} className="mb-4 p-4">
+                    <Card key={index} className="mb-4 p-4 text-foreground">
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -633,7 +636,7 @@ const AdminDashboard: React.FC = () => {
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={() => removeNewVideoField(index)}
+                          onClick={() => removeEditedVideoField(index)}
                           className="mt-4"
                         >
                           Remove Video
@@ -674,7 +677,11 @@ const AdminDashboard: React.FC = () => {
                 name="description"
                 value={newCourse.description}
                 onChange={handleNewCourseChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2 
+             bg-white text-gray-900 placeholder-gray-500 
+             border border-gray-300 
+             focus:border-indigo-500 focus:ring-indigo-500 
+             dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
                 required
               />
             </div>
@@ -718,8 +725,8 @@ const AdminDashboard: React.FC = () => {
                     .find(video => video._id === item.lessonId)?.duration || 1; // Default to 1 to avoid division by zero
 
                   return (
-                    <Card key={item._id} className="relative">
-                      <CardContent className="p-4">
+                    <Card key={item._id} className="relative text-foreground">
+                      <CardContent className="p-4 text-foreground">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-semibold">{item.lessonTitle}</p>
