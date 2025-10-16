@@ -9,13 +9,30 @@ const port = process.env.PORT || 5000;
 // Allowed origins
 const allowedOrigins = [
   'https://learning-platform-frontend-qjwx.onrender.com', // deployed frontend
-  'http://localhost:5173' // local dev
+  'http://localhost:5173', // local dev
+  'https://*.onrender.com' // Allow all subdomains for Render deployment
 ];
 
 // CORS configuration
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
+      return callback(null, true);
+    }
+    // Check if the origin is in the allowed list directly
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Check for wildcard origins (e.g., *.onrender.com)
+    const isWildcardAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin.startsWith('https://*.') && origin.startsWith('https://')) {
+        const domain = allowedOrigin.substring(allowedOrigin.indexOf('.') + 1);
+        return origin.endsWith(domain);
+      }
+      return false;
+    });
+
+    if (isWildcardAllowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
