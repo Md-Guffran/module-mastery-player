@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchCourses } from '@/src/api'; // Assuming fetchCourses is defined in src/api.ts
+import fetchCourses from "@/api";
+import api from "@/api";
 
 interface Course {
   id: string;
@@ -19,7 +20,7 @@ const CoursesPage: React.FC = () => {
     const loadCourses = async () => {
       try {
         setLoading(true);
-        const fetchedCourses = await fetchCourses(); // This should call GET api/admin/courses
+        const fetchedCourses = await api.get<Course[]>('/api/admin/courses'); // This should call GET api/admin/courses
         setCourses(fetchedCourses);
       } catch (err) {
         setError('Failed to load courses.');

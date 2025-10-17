@@ -8,7 +8,6 @@ const UserProgress = require('../models/UserProgress');
 const Course = require('../models/Course'); // Import the new Course model
 const auth = require('../middleware/auth');
 
-
 // Helper function to check if user is admin
 const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
@@ -91,9 +90,6 @@ router.get('/daily-activity', auth, isAdmin, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
-
-
 
 // @route   POST api/admin/modules
 // @desc    Create a new module

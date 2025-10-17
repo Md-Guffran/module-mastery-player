@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../apiClient';
-import { UserContext } from '../context/UserContext'; // Import UserContext
+import axios from 'axios';
 import { Course } from '@/types/course';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { API_BASE_URL } from '@/config';
 import ThemeToggle from '../components/ThemeToggle';
 
 const Index = () => {
@@ -16,9 +16,25 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await axios.get(`${API_BASE_URL}/api/auth`, {
+            headers: { 'x-auth-token': token },
+          });
+          setUserRole(res.data.role);
+        } catch (err) {
+          console.error('Failed to fetch user data:', err);
+          localStorage.removeItem('token');
+          navigate('/signin');
+        }
+      }
+    };
+
     const fetchCourses = async () => {
       try {
-        const res = await api.get('/api/course');
+        const res = await axios.get(`${API_BASE_URL}/api/course`);
         setCourses(res.data);
         setLoading(false);
       } catch (err) {
@@ -42,7 +58,7 @@ const Index = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="absolute top-4 right-4 z-10 flex space-x-2 items-center">
-        {user?.role === 'admin' && (
+        {userRole === 'admin' && (
           <Button asChild>
             <Link to="/admin">Go to Dashboard</Link>
           </Button>
@@ -64,7 +80,6 @@ const Index = () => {
                 <CardDescription>{course.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                {/* You can add more course details here if available */}
               </CardContent>
             </Card>
           </Link>

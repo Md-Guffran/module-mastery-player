@@ -11,6 +11,8 @@ import { Module, Lesson } from '@/types/course';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/config';
 
 declare global {
   interface Window {
@@ -40,11 +42,19 @@ const CoursePlayer = () => {
 
   // Fetch course data
   useEffect(() => {
-    const fetchCourseData = async () => {
-      if (!courseTitle) {
-        setError('Course title not provided.');
-        setLoading(false);
-        return;
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await axios.get(`${API_BASE_URL}/api/auth`, {
+            headers: { 'x-auth-token': token },
+          });
+          setUserRole(res.data.role);
+        } catch (err) {
+          console.error('Failed to fetch user data:', err);
+          localStorage.removeItem('token');
+          navigate('/signin');
+        }
       }
 
       try {
