@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // Allowed origins
 const allowedOrigins = [
   'https://learning-platform-frontend-qjwx.onrender.com', // deployed frontend
-  'http://localhost:5173', // local dev
+  'http://localhost:8080', // local dev
   'https://*.onrender.com' // Allow all subdomains for Render deployment
 ];
 
