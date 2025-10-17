@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useContext } from 'react';
+import api from '../apiClient';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { API_BASE_URL } from '@/config';
+import { UserContext } from '../context/UserContext'; // Import UserContext
 
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +13,7 @@ const Signin: React.FC = () => {
     password: ''
   });
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext); // Use UserContext
 
   const { email, password } = formData;
 
@@ -22,10 +23,13 @@ const Signin: React.FC = () => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/signin`, formData);
+      const res = await api.post('/api/auth/signin', formData, {
+        withCredentials: true,
+      });
       console.log(res.data);
-      // Store the token in localStorage or context
+      // Store the token in localStorage and update context
       localStorage.setItem('token', res.data.token);
+      setUser(res.data); // Store user info globally
       navigate('/');
     } catch (err) {
       console.error(err);

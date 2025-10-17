@@ -12,7 +12,7 @@ const Index = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { user, logout } = useContext(UserContext); // Use UserContext
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,34 +44,16 @@ const Index = () => {
       }
     };
 
-    fetchUserData();
     fetchCourses();
-  }, [navigate]);
+  }, []); // Removed navigate from dependency array as it's not directly used in fetchCourses
 
   const handleLogout = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        await axios.post('/api/auth/signout', {}, {
-          headers: { 'x-auth-token': token },
-        });
-      } catch (err) {
-        console.error('Failed to sign out:', err);
-      } finally {
-        localStorage.removeItem('token');
-        setUserRole(null);
-        navigate('/signin');
-      }
-    }
+    await logout();
+    navigate('/signin');
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading courses...</div>;
-  }
-
-  if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
-  }
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading courses...</div>;
+  if (error) return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
 
   return (
     <div className="container mx-auto p-6">
@@ -81,7 +63,7 @@ const Index = () => {
             <Link to="/admin">Go to Dashboard</Link>
           </Button>
         )}
-        {localStorage.getItem('token') && (
+        {user && (
           <Button onClick={handleLogout} variant="outline">
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>

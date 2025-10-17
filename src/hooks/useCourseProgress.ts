@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CourseProgress, UserProgressResponse } from '@/types/course';
-import api from '../api';
+import api from '../apiClient';
 
 export const useCourseProgress = () => {
   const [progress, setProgress] = useState<Record<string, CourseProgress>>({});

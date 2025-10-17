@@ -25,7 +25,6 @@ router.get('/:courseTitle', async (req, res) => {
       path: 'modules',
       populate: {
         path: 'videos',
-        model: 'Module' // Assuming 'videos' is a field in your Module model
       }
     });
 

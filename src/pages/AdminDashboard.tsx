@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import api from '../api';
+import React, { useState, useEffect, useContext } from 'react';
+import api from '../apiClient'; // Use apiClient
+import { UserContext } from '../context/UserContext'; // Import UserContext
 import { Module, Video, UserProgress, Course } from '../types/course'; // Assuming Course type exists or will be defined
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -32,6 +33,7 @@ interface DailyActivity {
 type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress' | 'create-course' | 'manage-course'; // Added 'manage-course' view mode
 
 const AdminDashboard: React.FC = () => {
+  const { user } = useContext(UserContext); // Use UserContext
   const [stats, setStats] = useState<{
     userCount: number;
     dailyCount: number;
@@ -60,7 +62,7 @@ const AdminDashboard: React.FC = () => {
   const fetchModulesForCourse = async (courseId: string) => {
     try {
       const res = await api.get<Module[]>(`/api/admin/courses/${courseId}/modules`); // Assuming an endpoint to fetch modules for a specific course
-      setModules(res);
+      setModules(res.data);
     } catch (err) {
       console.error('Failed to fetch modules for course:', err);
     }
@@ -93,7 +95,7 @@ const AdminDashboard: React.FC = () => {
   const fetchStats = async () => {
     try {
       const res = await api.get<{ userCount: number; dailyCount: number; mostWatchedVideos: string[] }>('/api/admin/stats');
-      setStats(res);
+      setStats(res.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
@@ -102,7 +104,7 @@ const AdminDashboard: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const res = await api.get<User[]>('/api/admin/users');
-      setUsers(res);
+      setUsers(res.data);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -111,7 +113,7 @@ const AdminDashboard: React.FC = () => {
   const fetchDailyActivity = async () => {
     try {
       const res = await api.get<DailyActivity[]>('/api/admin/daily-activity');
-      setDailyActivity(res);
+      setDailyActivity(res.data);
     } catch (err) {
       console.error('Failed to fetch daily activity:', err);
     }
@@ -120,7 +122,7 @@ const AdminDashboard: React.FC = () => {
   const fetchUserProgress = async () => {
     try {
       const res = await api.get<UserProgress[]>('/api/admin/progress');
-      setProgress(res);
+      setProgress(res.data);
     } catch (err) {
       console.error('Failed to fetch user progress:', err);
     }
@@ -129,7 +131,7 @@ const AdminDashboard: React.FC = () => {
   const fetchCourses = async () => {
     try {
       const res = await api.get<Course[]>('/api/admin/courses'); // Assuming an endpoint to fetch all courses
-      setCourses(res);
+      setCourses(res.data);
     } catch (err) {
       console.error('Failed to fetch courses:', err);
     }
@@ -278,8 +280,8 @@ const AdminDashboard: React.FC = () => {
       fetchCourses(); // Refresh the list of courses
       setViewMode('modules'); // Navigate to module management view
       // Optionally, set the newly created course as the selected one for module management
-      if (response && response._id) {
-        setSelectedCourseIdForModules(response._id);
+      if (response && response.data._id) {
+        setSelectedCourseIdForModules(response.data._id);
       }
     } catch (err) {
       console.error('Failed to create course:', err);
