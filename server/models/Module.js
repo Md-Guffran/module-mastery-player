@@ -21,6 +21,10 @@ const ModuleSchema = new mongoose.Schema({
       notesUrl: {
         type: String,
       },
+      duration: {
+        type: Number,
+        default: 0,
+      },
     },
   ],
 });

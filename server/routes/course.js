@@ -21,13 +21,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:courseTitle', async (req, res) => {
   try {
-    const course = await Course.findOne({ title: req.params.courseTitle }).populate({
-      path: 'modules',
-      populate: {
-        path: 'videos',
-        model: 'Module' // Assuming 'videos' is a field in your Module model
-      }
-    });
+    const course = await Course.findOne({ title: req.params.courseTitle }).populate('modules');
 
     if (!course) {
       return res.status(404).json({ msg: 'Course not found' });
@@ -45,13 +39,7 @@ router.get('/:courseTitle', async (req, res) => {
 // @access  Public
 router.get('/courses/:id', async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id).populate({
-      path: 'modules',
-      populate: {
-        path: 'videos',
-        model: 'Module'
-      }
-    });
+    const course = await Course.findById(req.params.id).populate('modules');
 
     if (!course) {
       return res.status(404).json({ msg: 'Course not found' });

@@ -39,7 +39,7 @@ const App = () => (
           {/* <Route path="/courses" element={<CoursesPage />} /> */}
           
           {/* Route for the Course Player page */}
-          <Route path="/course-player/:courseTitle" element={<PrivateRoute><CoursePlayer /></PrivateRoute>} />
+          <Route path="/course-player/:courseId/:moduleId/:videoId" element={<PrivateRoute><CoursePlayer /></PrivateRoute>} />
           <Route path="/course/:courseId" element={<PrivateRoute><CourseDescription /></PrivateRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
