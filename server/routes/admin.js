@@ -174,7 +174,7 @@ router.get('/progress', auth, isAdmin, async (req, res) => {
 // @access  Admin
 router.post('/courses', auth, isAdmin, async (req, res) => {
   try {
-    const { title, description, modules } = req.body;
+    const { title, description,skills,tools,level,duration, modules } = req.body;
 
     // Basic validation
     if (!title || !description) {
@@ -184,6 +184,10 @@ router.post('/courses', auth, isAdmin, async (req, res) => {
     const newCourse = new Course({
       title,
       description,
+      skills,
+      tools,
+      level,
+      duration,
       modules: modules || [], // Initialize with empty modules array if not provided
     });
 

@@ -14,8 +14,25 @@ const CourseSchema = new Schema({
   },
   modules: [{
     type: Schema.Types.ObjectId,
-    ref: 'Module', // Assuming you have a Module model
+    ref: 'Module',
   }],
+  skills: {
+    type: String,
+    default: '',
+  },
+  tools: {
+    type: String,
+    default: '',
+  },
+  level: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'advanced'],
+    default: 'beginner',
+  },
+  duration: {
+    type: String,
+    default: '0',
+  },
 }, {
   timestamps: true,
 });

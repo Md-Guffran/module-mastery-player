@@ -12,6 +12,6 @@
     "allowJs": true,
     "noUnusedLocals": false,
     "strictNullChecks": false,
-    "types": ["youtube"]
+    "types": ["youtube", "node"]
   }
 }
