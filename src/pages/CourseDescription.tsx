@@ -13,7 +13,7 @@ const CourseDescription: React.FC = () => {
     const fetchCourse = async () => {
       if (courseId) {
         try {
-          const response = await api.get<Course>(`/api/courses/${course.id}`); // Assuming an endpoint to fetch a course by ID
+          const response = await api.get<Course>(`/api/course/courses/${courseId}`);
           setCourse(response);
         } catch (error) {
           console.error('Error fetching course:', error);

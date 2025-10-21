@@ -39,4 +39,31 @@ router.get('/:courseTitle', async (req, res) => {
   }
 });
 
+
+// @route   GET api/course/:id
+// @desc    Get a single course by ID and its modules
+// @access  Public
+router.get('/courses/:id', async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id).populate({
+      path: 'modules',
+      populate: {
+        path: 'videos',
+        model: 'Module'
+      }
+    });
+
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+    res.json(course);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
