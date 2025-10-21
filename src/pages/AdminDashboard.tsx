@@ -29,7 +29,7 @@ interface DailyActivity {
 }
 
 
-type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress' | 'create-course' | 'manage-course'; // Added 'manage-course' view mode
+type ViewMode = 'overview' | 'users' | 'activity' | 'modules' | 'progress' | 'student-progress' | 'create-course' | 'manage-course' | 'edit-course'; // Added 'manage-course' view mode
 
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<{
@@ -55,6 +55,13 @@ const AdminDashboard: React.FC = () => {
   // State for creating a new course
   const [newCourse, setNewCourse] = useState<Course>({ title: '', description: '', modules: [] });
   const [selectedCourseIdForModules, setSelectedCourseIdForModules] = useState<string | null>(null); // To track which course's modules are being managed
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [editedCourseDescription, setEditedCourseDescription] = useState('');
+  const [isEditingCourseDescription, setIsEditingCourseDescription] = useState(false);
+  const [courseDescription, setCourseDescription] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseId, setCourseId] = useState('');
 
   // Fetch modules for a specific course
   const fetchModulesForCourse = async (courseId: string) => {
@@ -309,6 +316,13 @@ const AdminDashboard: React.FC = () => {
         <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'}>Create Course</Button>
       </div>
 
+      {/* Edit Course Description Button (within the modules view) */}
+      {viewMode === 'modules' && selectedCourseIdForModules && (
+        <Button onClick={() => setViewMode('edit-course')} variant="outline" className="mb-4 ml-4">
+          Edit Course Description
+        </Button>
+      )}
+
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="bg-blue-100 dark:bg-blue-900">
@@ -482,6 +496,7 @@ const AdminDashboard: React.FC = () => {
                                       name="resourcesUrl"
                                       value={video.resourcesUrl || ''}
                                       onChange={(e) => handleEditedVideoChange(index, e)}
+                                      required
                                     />
                                   </div>
                                   <div>
@@ -494,6 +509,7 @@ const AdminDashboard: React.FC = () => {
                                       name="notesUrl"
                                       value={video.notesUrl || ''}
                                       onChange={(e) => handleEditedVideoChange(index, e)}
+                                      required
                                     />
                                   </div>
                                   <div>
@@ -605,6 +621,7 @@ const AdminDashboard: React.FC = () => {
                               name="resourcesUrl"
                               value={video.resourcesUrl || ''}
                               onChange={(e) => handleNewVideoChange(index, e)}
+                              required
                             />
                           </div>
                           <div>
@@ -617,18 +634,19 @@ const AdminDashboard: React.FC = () => {
                               name="notesUrl"
                               value={video.notesUrl || ''}
                               onChange={(e) => handleNewVideoChange(index, e)}
+                              required
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`newDuration-${index}`}>
+                            <Label htmlFor={`editedDuration-${index}`}>
                               Duration (seconds)
                             </Label>
                             <Input
-                              id={`newDuration-${index}`}
+                              id={`editedDuration-${index}`}
                               type="number"
                               name="duration"
                               value={video.duration || 0}
-                              onChange={(e) => handleNewVideoChange(index, e)}
+                              onChange={(e) => handleEditedVideoChange(index, e)}
                               required
                             />
                           </div>

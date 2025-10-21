@@ -34,7 +34,7 @@ const CoursePlayer = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get(`${API_BASE_URL}/api/auth`, {
+          const res = await axios.get(`${API_BASE_URL}api/auth`, {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
@@ -110,7 +110,7 @@ const CoursePlayer = () => {
             }
           }
         }
-        await axios.post('/api/auth/signout', {}, {
+        await axios.post('api/auth/signout', {}, {
           headers: { 'x-auth-token': token },
         });
       } catch (err) {

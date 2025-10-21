@@ -47,13 +47,13 @@ const CoursesPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.length > 0 ? (
           courses.map((course) => (
-            <Link key={course.id} to={`/course-player/${course.id}`}>
+            <Link key={course.id} to={`/course-description/${course.id}`}>
               <Card className="hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-pointer">
                 <CardHeader>
                   <CardTitle>{course.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">{course.description}</p>
+                  <p className="text-gray-600">{course.description || 'No description available.'}</p>
                   {/* Add more course details here if available */}
                 </CardContent>
               </Card>

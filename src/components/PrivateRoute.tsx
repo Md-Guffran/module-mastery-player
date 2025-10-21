@@ -26,7 +26,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
       }
 
       try {
-        const res = await api.get<UserData>('/api/auth'); // Use the custom API client
+        const res = await api.get<UserData>('api/auth'); // Use the custom API client
         setUserRole(res.role);
       } catch (error) {
         console.error('Failed to fetch user data or token invalid', error);

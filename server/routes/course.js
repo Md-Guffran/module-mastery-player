@@ -39,4 +39,25 @@ router.get('/:courseTitle', async (req, res) => {
   }
 });
 
+// @route   PUT api/admin/courses/:courseId
+// @desc    Update a course description
+// @access  Private (Admin)
+router.put('/:courseId', async (req, res) => {
+  try {
+    const { description } = req.body;
+    const course = await Course.findById(req.params.courseId);
+
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    course.description = description;
+    await course.save();
+    res.json({ msg: 'Course description updated successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

@@ -76,6 +76,8 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
           disablekb: 1,
           rel: 0,
           origin: window.location.origin,
+          autoplay: 1,
+          muted: 1,
         },
         events: {
           onReady: onPlayerReady,
@@ -139,7 +141,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
 
     const seekAmount = 10; // seconds
     const newTime = Math.max(0, currentTime - seekAmount);
-    playerRef.current?.seekTo(newTime);
+    playerRef.current?.seekTo(newTime, true);
   };
 
   useEffect(() => {
@@ -173,7 +175,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
       const clickedTime = (clickX / width) * duration;
 
       // Only allow seeking backward or to the furthest watched point
-      const newTime = Math.min(clickedTime, watchedSeconds);
+      const newTime = Math.min(clickedTime, watchedSeconds + 5);
       playerRef.current.seekTo(newTime, true);
       setCurrentTime(newTime);
     }
