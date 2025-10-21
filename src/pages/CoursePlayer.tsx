@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom'; // Import useParams
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { CourseSidebar } from '@/components/CourseSidebar';
 import { VideoPlayer } from '@/components/VideoPlayer';
@@ -13,6 +13,18 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/config';
 
+interface YouTubePlayer {
+  getCurrentTime: () => number;
+  // Add other methods if needed
+}
+
+interface YouTubePlayerWindow extends Window {
+  YT: {
+    get: (id: string) => YouTubePlayer | undefined;
+    // Add other YT properties if needed
+  };
+}
+
 // Helper function to format seconds into MM:SS
 const formatDuration = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
@@ -22,7 +34,7 @@ const formatDuration = (seconds: number): string => {
 };
 
 const CoursePlayer = () => {
-  const { courseTitle } = useParams<{ courseTitle: string }>(); // Get courseTitle from URL
+  const { courseId, moduleId, videoId } = useParams<{ courseId: string; moduleId?: string; videoId?: string }>();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,8 +60,8 @@ const CoursePlayer = () => {
 
     const fetchCourseData = async () => {
       try {
-        const res = await axios.get(`/api/course/${courseTitle}`); // Fetch a single course by title
-        setModules(res.data.modules); // Extract modules from the course object
+        const res = await axios.get(`/api/course/courses/${courseId}`);
+        setModules(res.data.modules);
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch course data:', err);
@@ -59,42 +71,46 @@ const CoursePlayer = () => {
     };
 
     fetchUserData();
-    if (courseTitle) {
+    if (courseId) {
       fetchCourseData();
     } else {
-      setError('Course title not provided.');
+      setError('Course ID not provided.');
       setLoading(false);
     }
-  }, [courseTitle, navigate]);
+  }, [courseId, navigate]);
 
-  const initialLesson = modules.length > 0 && modules[0].videos.length > 0
-    ? {
-        id: modules[0].videos[0]._id,
-        title: modules[0].videos[0].title,
-        description: '',
-        videoUrl: modules[0].videos[0].url,
-        duration: 0,
-        resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
-        notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
-      }
-    : null;
-
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(initialLesson);
+  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const { progress, updateProgress, getProgress, getTotalProgress } = useCourseProgress();
 
   useEffect(() => {
-    if (modules.length > 0 && modules[0].videos.length > 0 && !currentLesson) {
-      setCurrentLesson({
-        id: modules[0].videos[0]._id,
-        title: modules[0].videos[0].title,
-        description: '',
-        videoUrl: modules[0].videos[0].url,
-        duration: 0,
-        resources: modules[0].videos[0].resourcesUrl ? [{ title: 'Resources', url: modules[0].videos[0].resourcesUrl }] : [],
-        notes: modules[0].videos[0].notesUrl ? [{ title: 'Notes', url: modules[0].videos[0].notesUrl }] : [],
-      });
+    if (modules.length > 0) {
+      let selectedVideo = null;
+      if (moduleId && videoId) {
+        // Find the specific video if moduleId and videoId are provided
+        const targetModule = modules.find(m => (m._id || m.id) === moduleId);
+        if (targetModule) {
+          selectedVideo = targetModule.videos.find(v => (v._id || v.id) === videoId);
+        }
+      }
+
+      // If no specific video found or provided, default to the first video of the first module
+      if (!selectedVideo && modules[0].videos.length > 0) {
+        selectedVideo = modules[0].videos[0];
+      }
+
+      if (selectedVideo && !currentLesson) {
+        setCurrentLesson({
+          id: selectedVideo._id,
+          title: selectedVideo.title,
+          description: '', // Description is not in video schema, can be added if needed
+          videoUrl: selectedVideo.url,
+          duration: selectedVideo.duration || 0, // Use actual duration if available
+          resources: selectedVideo.resourcesUrl ? [{ title: 'Resources', url: selectedVideo.resourcesUrl }] : [],
+          notes: selectedVideo.notesUrl ? [{ title: 'Notes', url: selectedVideo.notesUrl }] : [],
+        });
+      }
     }
-  }, [modules, currentLesson]);
+  }, [modules, currentLesson, moduleId, videoId]);
 
   const handleLogout = async () => {
     const token = localStorage.getItem('token');
@@ -103,7 +119,8 @@ const CoursePlayer = () => {
         if (currentLesson) {
           const playerIframe = document.getElementById(`youtube-player-${currentLesson.id}`) as HTMLIFrameElement | null;
           if (playerIframe && playerIframe.contentWindow && 'YT' in playerIframe.contentWindow) {
-            const player = (playerIframe.contentWindow as any).YT.get(playerIframe.id);
+            const playerWindow = playerIframe.contentWindow as unknown as YouTubePlayerWindow;
+            const player = playerWindow.YT.get(playerIframe.id);
             if (player && typeof player.getCurrentTime === 'function') {
               const currentTime = player.getCurrentTime();
               updateProgress(currentLesson.id, { watchedSeconds: currentTime, lessonTitle: currentLesson.title });
@@ -128,7 +145,7 @@ const CoursePlayer = () => {
     title: video.title,
     description: '',
     videoUrl: video.url,
-    duration: 0,
+    duration: video.duration || 0,
     resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
     notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
   })));
@@ -185,7 +202,7 @@ const CoursePlayer = () => {
             title: video.title,
             description: '',
             videoUrl: video.url,
-            duration: 0,
+            duration: video.duration || 0,
             resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
             notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
           }))
