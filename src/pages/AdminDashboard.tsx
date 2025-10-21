@@ -53,7 +53,16 @@ const AdminDashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
 
   // State for creating a new course
-  const [newCourse, setNewCourse] = useState<Course>({ title: '', description: '', modules: [] });
+  const [newCourse, setNewCourse] = useState<Course>({
+    title: '',
+    description: '',
+    modules: [],
+    skills: '',
+    tools: '',
+    level: 'beginner',
+    duration: '0',
+    _id: '',
+  });
   const [selectedCourseIdForModules, setSelectedCourseIdForModules] = useState<string | null>(null); // To track which course's modules are being managed
 
   // Fetch modules for a specific course
@@ -265,7 +274,7 @@ const AdminDashboard: React.FC = () => {
 
   // --- New Course Creation Handlers ---
 
-  const handleNewCourseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleNewCourseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setNewCourse({ ...newCourse, [e.target.name]: e.target.value });
   };
 
@@ -274,7 +283,11 @@ const AdminDashboard: React.FC = () => {
     try {
       const response = await api.post<Course>('/api/admin/courses', newCourse); // Assuming POST /api/admin/courses creates a new course
       alert('Course created successfully!');
-      setNewCourse({ title: '', description: '', modules: [] }); // Reset form
+      const newCourseReset = { title: '', description: '', modules: [], skills: '', tools: '', level: 'beginner' as 'beginner', duration: '0', _id: '' };
+      if (response && response._id) {
+        newCourseReset._id = response._id;
+      }
+      setNewCourse(newCourseReset); // Reset form
       fetchCourses(); // Refresh the list of courses
       setViewMode('modules'); // Navigate to module management view
       // Optionally, set the newly created course as the selected one for module management
@@ -682,6 +695,57 @@ const AdminDashboard: React.FC = () => {
              border border-gray-300 
              focus:border-indigo-500 focus:ring-indigo-500 
              dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="courseSkills">Skills</Label>
+              <Input
+                id="courseSkills"
+                type="text"
+                name="skills"
+                value={newCourse.skills}
+                onChange={handleNewCourseChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="courseTools">Tools</Label>
+              <Input
+                id="courseTools"
+                type="text"
+                name="tools"
+                value={newCourse.tools}
+                onChange={handleNewCourseChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="courseLevel">Level</Label>
+              <select
+                id="courseLevel"
+                name="level"
+                value={newCourse.level}
+                onChange={handleNewCourseChange}
+                className="p-2 border rounded mt-1 block w-full shadow-sm sm:text-sm 
+             bg-white text-gray-900 border-gray-300 
+             focus:border-indigo-500 focus:ring-indigo-500 
+             dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
+                required
+              >
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="courseDuration">Duration</Label>
+              <Input
+                id="courseDuration"
+                type="text"
+                name="duration"
+                value={newCourse.duration}
+                onChange={handleNewCourseChange}
                 required
               />
             </div>

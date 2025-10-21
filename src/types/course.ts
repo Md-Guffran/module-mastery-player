@@ -31,11 +31,16 @@ export interface Video {
   notesUrl?: string;
 }
 
-export interface Course { // Define the Course interface
-  _id?: string;
+export interface Course {
+  _id: string;
+  id?: any;
   title: string;
   description: string;
   modules: Module[];
+  skills: string;
+  tools: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  duration: string;
 }
 
 export interface CourseProgress {

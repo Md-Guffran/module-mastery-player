@@ -91,7 +91,7 @@ const Index = () => {
       <h1 className="text-4xl font-bold text-center mb-10 text-foreground">Available Courses</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => (
-          <Link to={`/course-player/${encodeURIComponent(course.title)}`} key={course._id}>
+          <Link to={`/course/${course._id}`} key={course._id}>
             <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200">
               <CardHeader>
                 <CardTitle>{course.title}</CardTitle>
