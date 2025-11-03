@@ -41,7 +41,7 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(242 90% 65%));
+    --gradient-primary: hsl(262 83% 58%);
     --gradient-accent: linear-gradient(135deg, hsl(200 98% 50%), hsl(180 88% 55%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(122 70% 42%));
     

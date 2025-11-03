@@ -78,7 +78,12 @@ const Index = () => {
       <div className="absolute top-4 right-4 z-10 flex space-x-2 items-center">
         {userRole === 'admin' && (
           <Button asChild>
-            <Link to="/admin">Go to Dashboard</Link>
+            <Link to="/admin">Admin Dashboard</Link>
+          </Button>
+        )}
+        {userRole !== 'admin' && localStorage.getItem('token') && (
+          <Button asChild>
+            <Link to="/dashboard">My Progress Dashboard</Link>
           </Button>
         )}
         {localStorage.getItem('token') && (

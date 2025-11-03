@@ -370,13 +370,18 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-4">
             {users.length > 0 ? (
               users.map((user) => (
-                <Card key={user._id} className="cursor-pointer hover:bg-accent text-foreground" onClick={() => {
-                  setSelectedStudentId(user._id);
-                  setViewMode('student-progress');
-                }}>
-                  <CardContent className="p-4">
-                    <p className="font-semibold">{user.username}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                <Card key={user._id} className="text-foreground">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">{user.username}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                    <Button onClick={() => {
+                      setSelectedStudentId(user._id);
+                      setViewMode('student-progress');
+                    }}>
+                      View Progress
+                    </Button>
                   </CardContent>
                 </Card>
               ))

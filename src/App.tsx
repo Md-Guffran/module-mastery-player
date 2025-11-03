@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserDashboard from "./pages/UserDashboard"; // Import UserDashboard
 import PrivateRoute from "./components/PrivateRoute";
 import CoursePlayer from "./pages/CoursePlayer"; // Import CoursePlayer
 import CourseDescription from "./pages/CourseDescription";
@@ -32,6 +33,14 @@ const App = () => (
             element={
               <PrivateRoute requiredRole="admin">
                 <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <UserDashboard />
               </PrivateRoute>
             }
           />
