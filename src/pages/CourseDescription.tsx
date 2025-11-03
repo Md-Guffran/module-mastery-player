@@ -43,9 +43,11 @@ const CourseDescription: React.FC = () => {
       <p className="text-sm mb-2">Tools: {course.tools}</p>
       <p className="text-sm mb-2">Level: {course.level}</p>
       <p className="text-sm mb-4">Duration: {course.duration}</p>
-      <Link to={`/course-player/${encodeURIComponent(course.title)}`}>
-        <Button>Start Course</Button>
-      </Link>
+      {course.modules.length > 0 && course.modules[0].videos.length > 0 && (
+        <Link to={`/course-player/${courseId}/${course.modules[0]._id || course.modules[0].id}/${course.modules[0].videos[0]._id || course.modules[0].videos[0].id}`}>
+          <Button>Start Course</Button>
+        </Link>
+      )}
 
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Course content</h2>

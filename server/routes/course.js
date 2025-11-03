@@ -54,4 +54,17 @@ router.get('/courses/:id', async (req, res) => {
   }
 });
 
+// @route   GET api/modules
+// @desc    Get all modules
+// @access  Public
+router.get('/modules', async (req, res) => {
+  try {
+    const modules = await Module.find().populate('videos');
+    res.json(modules);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
