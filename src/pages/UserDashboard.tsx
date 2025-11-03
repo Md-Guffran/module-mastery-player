@@ -79,7 +79,7 @@ const UserDashboard: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                     <div
                       className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: `${(item.watchedSeconds / lessonDuration) * 100}%` }}
+                      style={{ width: `${Math.min((item.watchedSeconds / lessonDuration) * 100, 100)}%` }}
                     ></div>
                   </div>
                 </CardContent>
