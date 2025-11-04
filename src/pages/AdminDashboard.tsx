@@ -178,11 +178,28 @@ const AdminDashboard: React.FC = () => {
       alert('Please select a course to add modules to.');
       return;
     }
+    
+    // Validate that all videos have valid duration (not zero)
+    const invalidVideos = newModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
+    if (invalidVideos.length > 0) {
+      alert('Please ensure all videos have a duration greater than zero (in minutes).');
+      return;
+    }
+    
     try {
+      // Convert minutes to seconds before sending
+      const moduleToSubmit = {
+        ...newModule,
+        videos: newModule.videos.map(video => ({
+          ...video,
+          duration: Number(video.duration) * 60 // Convert minutes to seconds
+        }))
+      };
+      
       // Assuming POST /api/admin/courses/:courseId/modules creates a new module for the specified course
-      const res = await api.post<Module>(`/api/admin/courses/${selectedCourseIdForModules}/modules`, newModule);
+      const res = await api.post<Module>(`/api/admin/courses/${selectedCourseIdForModules}/modules`, moduleToSubmit);
       alert('Module created successfully');
-      setNewModule({ title: '', videos: [] }); // Reset form
+      setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0 }] }); // Reset form
       fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
     } catch (err) {
       console.error('Failed to create module:', err);
@@ -197,7 +214,7 @@ const AdminDashboard: React.FC = () => {
       ...module,
       videos: module.videos.map(video => ({
         ...video,
-        duration: video.duration || 0, // Ensure duration is set
+        duration: video.duration ? video.duration / 60 : 0, // Convert seconds to minutes for display
         resourcesUrl: video.resourcesUrl || '',
         notesUrl: video.notesUrl || '',
       }))
@@ -240,9 +257,25 @@ const AdminDashboard: React.FC = () => {
 
   const handleUpdateModule = async () => {
     if (editedModule && editedModule._id) {
+      // Validate that all videos have valid duration (not zero)
+      const invalidVideos = editedModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
+      if (invalidVideos.length > 0) {
+        alert('Please ensure all videos have a duration greater than zero (in minutes).');
+        return;
+      }
+      
       try {
+        // Convert minutes to seconds before sending
+        const moduleToUpdate = {
+          ...editedModule,
+          videos: editedModule.videos.map(video => ({
+            ...video,
+            duration: Number(video.duration) * 60 // Convert minutes to seconds
+          }))
+        };
+        
         // Assuming PUT /api/admin/modules/:moduleId updates a module
-        const res = await api.put<Module>(`/api/admin/modules/${editedModule._id}`, editedModule);
+        const res = await api.put<Module>(`/api/admin/modules/${editedModule._id}`, moduleToUpdate);
         alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
@@ -514,19 +547,21 @@ const AdminDashboard: React.FC = () => {
                                       onChange={(e) => handleEditedVideoChange(index, e)}
                                     />
                                   </div>
-                                  <div>
-                                    <Label htmlFor={`editedDuration-${index}`}>
-                                      Duration (seconds)
-                                    </Label>
-                                    <Input
-                                      id={`editedDuration-${index}`}
-                                      type="number"
-                                      name="duration"
-                                      value={video.duration || 0}
-                                      onChange={(e) => handleEditedVideoChange(index, e)}
-                                      required
-                                    />
-                                  </div>
+                          <div>
+                            <Label htmlFor={`editedDuration-${index}`}>
+                              Duration (minutes) *
+                            </Label>
+                            <Input
+                              id={`editedDuration-${index}`}
+                              type="number"
+                              name="duration"
+                              min="1"
+                              step="0.1"
+                              value={video.duration || ''}
+                              onChange={(e) => handleEditedVideoChange(index, e)}
+                              required
+                            />
+                          </div>
                                 </div>
                                 <Button
                                   type="button"
@@ -639,13 +674,15 @@ const AdminDashboard: React.FC = () => {
                           </div>
                           <div>
                             <Label htmlFor={`newDuration-${index}`}>
-                              Duration (seconds)
+                              Duration (minutes) *
                             </Label>
                             <Input
                               id={`newDuration-${index}`}
                               type="number"
                               name="duration"
-                              value={video.duration || 0}
+                              min="1"
+                              step="0.1"
+                              value={video.duration || ''}
                               onChange={(e) => handleNewVideoChange(index, e)}
                               required
                             />

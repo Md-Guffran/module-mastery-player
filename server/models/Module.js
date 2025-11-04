@@ -23,7 +23,8 @@ const ModuleSchema = new mongoose.Schema({
       },
       duration: {
         type: Number,
-        default: 0,
+        required: true,
+        min: 1, // Duration must be at least 1 second
       },
     },
   ],
