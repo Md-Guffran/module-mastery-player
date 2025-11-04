@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { UserProgress, Module } from '../types/course';
+import { UserProgress, Course } from '../types/course';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { CheckCircle, Clock } from 'lucide-react';
 
@@ -13,11 +13,11 @@ interface User {
 
 const UserDashboard: React.FC = () => {
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
-  const [modules, setModules] = useState<Module[]>([]); // To get video durations
+  const [courses, setCourses] = useState<Course[]>([]); // To get all courses with modules and videos
 
   useEffect(() => {
     fetchUserProgress();
-    fetchModules(); // Fetch all modules to get video durations
+    fetchCourses(); // Fetch all courses to get video durations
   }, []);
 
   const fetchUserProgress = async () => {
@@ -30,14 +30,13 @@ const UserDashboard: React.FC = () => {
     }
   };
 
-  const fetchModules = async () => {
+  const fetchCourses = async () => {
     try {
-      // Assuming an API endpoint to fetch all modules (or modules relevant to the user's courses)
-      // For simplicity, fetching all modules for now. In a real app, this might be optimized.
-      const res = await api.get<Module[]>('/api/course/modules'); // Corrected endpoint
-      setModules(res);
+      // Fetch all courses with modules populated to get all videos
+      const res = await api.get<Course[]>('/api/course');
+      setCourses(res);
     } catch (err) {
-      console.error('Failed to fetch modules:', err);
+      console.error('Failed to fetch courses:', err);
     }
   };
 
@@ -48,10 +47,32 @@ const UserDashboard: React.FC = () => {
       <div className="grid grid-cols-1 gap-4">
         {userProgress.length > 0 ? (
           userProgress.map((item) => {
-            // Find the total duration for the lesson from the modules data
-            const lessonDuration = modules
-              .flatMap(m => m.videos)
-              .find(video => video._id === item.lessonId)?.duration || 1; // Default to 1 to avoid division by zero
+            // Find the total duration for the lesson from all courses' modules and videos
+            let lessonDuration = 0;
+            const lessonIdStr = String(item.lessonId);
+            
+            for (const course of courses) {
+              if (course.modules && Array.isArray(course.modules)) {
+                for (const module of course.modules) {
+                  if (module.videos && Array.isArray(module.videos)) {
+                    const video = module.videos.find((v: any) => {
+                      const videoId = v._id ? String(v._id) : (v.id ? String(v.id) : '');
+                      return videoId === lessonIdStr;
+                    });
+                    if (video && video.duration && video.duration > 0) {
+                      lessonDuration = video.duration;
+                      break;
+                    }
+                  }
+                }
+              }
+              if (lessonDuration > 0) break;
+            }
+            
+            // If still not found, default to 1 to avoid division by zero
+            if (lessonDuration === 0) {
+              lessonDuration = 1;
+            }
 
             return (
               <Card key={item._id} className="relative text-foreground">
@@ -59,9 +80,20 @@ const UserDashboard: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{item.lessonTitle}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Watched: {item.watchedSeconds.toFixed(0)} seconds / {lessonDuration.toFixed(0)} seconds
-                      </p>
+                      {lessonDuration > 1 ? (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            Video Duration: {(lessonDuration / 60).toFixed(1)} min
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Watched: {(item.watchedSeconds / 60).toFixed(1)} min / {(lessonDuration / 60).toFixed(1)} min
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Video Duration: Not available
+                        </p>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         Last Updated: {new Date(item.updatedAt).toLocaleString()}
                       </p>
@@ -76,12 +108,14 @@ const UserDashboard: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: `${Math.min((item.watchedSeconds / lessonDuration) * 100, 100)}%` }}
-                    ></div>
-                  </div>
+                  {lessonDuration > 1 && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
+                        style={{ width: `${Math.min((item.watchedSeconds / lessonDuration) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
