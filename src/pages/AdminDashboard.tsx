@@ -5,7 +5,10 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { PlusCircle, MinusCircle, Edit, Trash2, Save, Users, BarChart, VideoIcon, Clock, CheckCircle } from 'lucide-react'; // Import icons
+import { PlusCircle, MinusCircle, Edit, Trash2, Save, Users, BarChart, VideoIcon } from 'lucide-react'; // Import icons
+import { ProgressCard } from '../components/ProgressCard';
+import { minutesToSeconds, secondsToMinutes } from '../utils/duration';
+import { findVideoDuration } from '../utils/videoUtils';
 import {
   Accordion,
   AccordionContent,
@@ -192,7 +195,7 @@ const AdminDashboard: React.FC = () => {
         ...newModule,
         videos: newModule.videos.map(video => ({
           ...video,
-          duration: Number(video.duration) * 60 // Convert minutes to seconds
+          duration: minutesToSeconds(Number(video.duration))
         }))
       };
       
@@ -214,7 +217,7 @@ const AdminDashboard: React.FC = () => {
       ...module,
       videos: module.videos.map(video => ({
         ...video,
-        duration: video.duration ? video.duration / 60 : 0, // Convert seconds to minutes for display
+        duration: video.duration ? secondsToMinutes(video.duration) : 0, // Convert seconds to minutes for display
         resourcesUrl: video.resourcesUrl || '',
         notesUrl: video.notesUrl || '',
       }))
@@ -270,7 +273,7 @@ const AdminDashboard: React.FC = () => {
           ...editedModule,
           videos: editedModule.videos.map(video => ({
             ...video,
-            duration: Number(video.duration) * 60 // Convert minutes to seconds
+            duration: minutesToSeconds(Number(video.duration))
           }))
         };
         
@@ -826,45 +829,21 @@ const AdminDashboard: React.FC = () => {
               progress
                 .filter(item => (selectedStudentId ? item.user._id === selectedStudentId : true))
                 .map((item) => {
-                  // Find the total duration for the lesson from the modules data
-                  const lessonDuration = modules
-                    .flatMap(m => m.videos)
-                    .find(video => video._id === item.lessonId)?.duration || 1; // Default to 1 to avoid division by zero
+                  const lessonDuration = findVideoDuration(courses, item.lessonId) || 1;
 
                   return (
-                    <Card key={item._id} className="relative text-foreground">
-                      <CardContent className="p-4 text-foreground">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold">{item.lessonTitle}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {item.user.username} ({item.user.email})
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Watched: {item.watchedSeconds.toFixed(0)} seconds / {lessonDuration.toFixed(0)} seconds
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Last Updated: {new Date(item.updatedAt).toLocaleString()}
-                            </p>
-                          </div>
-                          {item.completed ? (
-                            <span className="text-green-500 flex items-center">
-                              <CheckCircle className="w-5 h-5 mr-1" /> Completed
-                            </span>
-                          ) : (
-                            <span className="text-yellow-500 flex items-center">
-                              <Clock className="w-5 h-5 mr-1" /> In Progress
-                            </span>
-                          )}
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-                          <div
-                            className="bg-blue-600 h-2.5 rounded-full"
-                            style={{ width: `${Math.min((item.watchedSeconds / lessonDuration) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <ProgressCard
+                      key={item._id}
+                      lessonTitle={item.lessonTitle}
+                      watchedSeconds={item.watchedSeconds}
+                      lessonDuration={lessonDuration}
+                      updatedAt={item.updatedAt}
+                      completed={item.completed}
+                      userInfo={{
+                        username: item.user.username,
+                        email: item.user.email,
+                      }}
+                    />
                   );
                 })
             ) : (

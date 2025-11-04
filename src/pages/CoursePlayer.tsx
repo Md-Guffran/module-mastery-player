@@ -25,13 +25,7 @@ interface YouTubePlayerWindow extends Window {
   };
 }
 
-// Helper function to format seconds into MM:SS
-const formatDuration = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  const formattedSeconds = remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`;
-  return `${minutes}:${formattedSeconds}`;
-};
+import { formatDurationMMSS } from '@/utils/duration';
 
 const CoursePlayer = () => {
   const { courseId, moduleId, videoId } = useParams<{ courseId: string; moduleId?: string; videoId?: string }>();
@@ -239,7 +233,7 @@ const CoursePlayer = () => {
                   )}
                   {currentLesson.duration > 0 && (
                     <p className="text-muted-foreground text-sm">
-                      Duration: {formatDuration(currentLesson.duration)}
+                      Duration: {formatDurationMMSS(currentLesson.duration)}
                     </p>
                   )}
                 </div>

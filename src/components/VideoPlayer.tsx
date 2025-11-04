@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import api from '../api';
+import { formatDurationMMSS } from '@/utils/duration';
 
 declare const YT: any;
 
@@ -173,12 +174,6 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
     }
   };
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
-  };
-
   if (!videoId) return <div className="aspect-video bg-black flex items-center justify-center text-white">Invalid video URL</div>;
 
   return (
@@ -193,7 +188,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
           <div className="bg-red-600 h-full" style={{ width: `${(currentTime / duration) * 100}%` }} />
         </div>
         <div className="flex justify-between items-center mt-2 text-white text-sm">
-          <span>{formatTime(currentTime)}</span>
+          <span>{formatDurationMMSS(currentTime)}</span>
           <div className="flex items-center space-x-4">
             <Button onClick={handleBackwardSeek} variant="ghost" size="sm">
               Rewind 10s
@@ -213,7 +208,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
               <option value={2}>2x</option>
             </select>
           </div>
-          <span>{formatTime(duration)}</span>
+          <span>{formatDurationMMSS(duration)}</span>
         </div>
       </div>
     </div>

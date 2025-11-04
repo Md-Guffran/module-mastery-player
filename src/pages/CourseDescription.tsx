@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { PlayCircle, FileText } from 'lucide-react';
+import { formatDurationMinutes } from '@/utils/duration';
 
 const CourseDescription: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -67,7 +68,7 @@ const CourseDescription: React.FC = () => {
                       </Link>
                     </div>
                     <span className="text-sm text-gray-600">
-                      {video.duration ? `${(video.duration / 60).toFixed(1)} min` : 'N/A'}
+                      {formatDurationMinutes(video.duration || 0)}
                     </span>
                   </div>
                 ))}
