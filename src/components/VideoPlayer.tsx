@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import api from '../api';
 import { formatDurationMMSS } from '@/utils/duration';
+import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize } from 'lucide-react'; // Import icons
 
 declare const YT: any;
 
@@ -39,6 +40,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   const videoId = getYouTubeVideoId(url);
   const playerRef = useRef<YT.Player | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null); // Add ref for video container
 
   const [playbackRate, setPlaybackRate] = useState(1);
   const [hasWatched, setHasWatched] = useState(progress.watched);
@@ -47,6 +49,10 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   const [watchedSeconds, setWatchedSeconds] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false); // Add state for play/pause
+  const [volume, setVolume] = useState(100); // Add state for volume
+  const [isMuted, setIsMuted] = useState(false); // Add state for mute
+  const [isFullScreen, setIsFullScreen] = useState(false); // Add state for full screen
 
   // ✅ Debounced backend update
   const saveProgress = useCallback(
@@ -128,9 +134,13 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
       saveProgress(lessonId, lessonTitle, endTime);
       onProgress({ lessonId, lessonTitle, completed: true, watched: true, watchedSeconds: endTime });
       setHasWatched(true);
+      setIsPlaying(false); // Update play state
     } else if (event.data === YT.PlayerState.PAUSED) {
       const time = playerRef.current?.getCurrentTime() || 0;
       saveProgress(lessonId, lessonTitle, time);
+      setIsPlaying(false); // Update play state
+    } else if (event.data === YT.PlayerState.PLAYING) {
+      setIsPlaying(true); // Update play state
     }
   };
 
@@ -156,11 +166,58 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
     return () => cancelAnimationFrame(animationFrame);
   }, [isPlayerReady, saveProgress, lessonId, lessonTitle]);
 
+  const handlePlayPause = () => { // Add play/pause handler
+    if (!playerRef.current) return;
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+    } else {
+      playerRef.current.playVideo();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const handleBackwardSeek = () => {
     const time = playerRef.current?.getCurrentTime();
     if (time === undefined) return;
     playerRef.current?.seekTo(Math.max(0, time - 10), true);
   };
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => { // Add volume change handler
+    const newVolume = parseInt(e.target.value, 10);
+    setVolume(newVolume);
+    playerRef.current?.setVolume(newVolume);
+    if (newVolume > 0) setIsMuted(false);
+  };
+
+  const handleToggleMute = () => { // Add mute toggle handler
+    if (!playerRef.current) return;
+    if (isMuted) {
+      playerRef.current.unMute();
+      playerRef.current.setVolume(volume);
+    } else {
+      playerRef.current.mute();
+    }
+    setIsMuted(!isMuted);
+  };
+
+  const handleFullScreenToggle = () => { // Add full screen toggle handler
+    if (videoContainerRef.current) {
+      if (!document.fullscreenElement) {
+        videoContainerRef.current.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => { // Add full screen change listener
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
 
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (progressBarRef.current && duration > 0 && playerRef.current) {
@@ -174,25 +231,52 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
     }
   };
 
-  if (!videoId) return <div className="aspect-video bg-black flex items-center justify-center text-white">Invalid video URL</div>;
+  if (!videoId)
+    return (
+      <div className="aspect-video bg-black flex items-center justify-center text-white">
+        Invalid video URL
+      </div>
+    );
 
   return (
-    <div className="relative aspect-video bg-black group">
+    <div ref={videoContainerRef} className="relative aspect-video bg-black group"> {/* Attach ref here */}
       <div id={`youtube-player-${videoId}`} className="absolute top-0 left-0 w-full h-full" />
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div
           ref={progressBarRef}
-          className="w-full bg-white/20 h-1.5 cursor-pointer"
+          className="w-full bg-white/20 h-1.5 cursor-pointer relative" // Added relative for scrubber
           onClick={handleProgressBarClick}
         >
           <div className="bg-red-600 h-full" style={{ width: `${(currentTime / duration) * 100}%` }} />
+          {/* Scrubber */}
+          <div
+            className="absolute -top-1 h-4 w-4 bg-red-600 rounded-full -ml-2"
+            style={{ left: `${(currentTime / duration) * 100}%` }}
+          />
         </div>
         <div className="flex justify-between items-center mt-2 text-white text-sm">
-          <span>{formatDurationMMSS(currentTime)}</span>
-          <div className="flex items-center space-x-4">
-            <Button onClick={handleBackwardSeek} variant="ghost" size="sm">
-              Rewind 10s
+          <div className="flex items-center space-x-2"> {/* Group play/seek buttons */}
+            <Button onClick={handlePlayPause} variant="ghost" size="icon" className="h-8 w-8">
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
+            <Button onClick={handleBackwardSeek} variant="ghost" size="icon" className="h-8 w-8">
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <span>{formatDurationMMSS(currentTime)} / {formatDurationMMSS(duration)}</span>
+          </div>
+
+          <div className="flex items-center space-x-4"> {/* Group volume/speed/fullscreen buttons */}
+            <Button onClick={handleToggleMute} variant="ghost" size="icon" className="h-8 w-8">
+              {isMuted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-24 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer"
+            />
             <select
               value={playbackRate}
               onChange={(e) => {
@@ -200,15 +284,17 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
                 setPlaybackRate(rate);
                 playerRef.current?.setPlaybackRate(rate);
               }}
-              className="bg-transparent text-white rounded px-2 py-1 text-sm"
+              className="bg-gray-200 text-black rounded px-2 py-1 text-sm"
             >
               <option value={0.5}>0.5x</option>
               <option value={1}>1x</option>
               <option value={1.5}>1.5x</option>
               <option value={2}>2x</option>
             </select>
+            <Button onClick={handleFullScreenToggle} variant="ghost" size="icon" className="h-8 w-8">
+              <Maximize className="h-4 w-4" />
+            </Button>
           </div>
-          <span>{formatDurationMMSS(duration)}</span>
         </div>
       </div>
     </div>
