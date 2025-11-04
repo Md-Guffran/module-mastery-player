@@ -7,13 +7,30 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import ThemeToggle from '../components/ThemeToggle';
+import CourseSearchBar from '../components/CourseSearchBar';
 
 const Index = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
+  const handleCourseSelect = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+  };
+
+  // Filter courses based on search term
+  const filteredCourses = courses.filter((course) => {
+    if (!searchTerm.trim()) {
+      return true; // Show all courses if search is empty
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      course.title.toLowerCase().includes(searchLower) ||
+      course.description.toLowerCase().includes(searchLower)
+    );
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -94,20 +111,29 @@ const Index = () => {
         <ThemeToggle />
       </div>
       <h1 className="text-4xl font-bold text-center mb-10 text-foreground">Available Courses</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <Link to={`/course/${course._id}`} key={course._id}>
-            <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200">
-              <CardHeader>
-                <CardTitle>{course.title}</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+      <div className="mb-8">
+        <CourseSearchBar onCourseSelect={handleCourseSelect} onSearchChange={setSearchTerm} />
       </div>
+      {filteredCourses.length === 0 && searchTerm.trim() ? (
+        <div className="text-center text-muted-foreground py-8">
+          No courses found.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map((course) => (
+            <Link to={`/course/${course._id}`} key={course._id}>
+              <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle>{course.title}</CardTitle>
+                  <CardDescription>{course.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
