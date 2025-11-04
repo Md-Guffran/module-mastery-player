@@ -104,9 +104,11 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
         width: '100%',
         videoId,
         playerVars: {
+          // Disable player controls, which should hide the video title link (ytp-title-link)
           controls: 0,
           disablekb: 1,
           rel: 0,
+          modestbranding: 1, // Further attempts to minimize YouTube branding and controls
           origin: window.location.origin,
         },
         events: {
@@ -241,7 +243,9 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   return (
     <div ref={videoContainerRef} className="relative aspect-video bg-black group"> {/* Attach ref here */}
       <div id={`youtube-player-${videoId}`} className="absolute top-0 left-0 w-full h-full" />
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      {/* Overlay to disable clicks on the top part of the iframe content (title/header) */}
+      <div className="absolute top-0 left-0 w-full h-[80%] z-10" />
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
         <div
           ref={progressBarRef}
           className="w-full bg-white/20 h-1.5 cursor-pointer relative" // Added relative for scrubber
@@ -275,7 +279,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
               max="100"
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-24 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer"
+              className="w-24 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
             />
             <select
               value={playbackRate}

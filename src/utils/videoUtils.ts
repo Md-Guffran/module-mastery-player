@@ -28,3 +28,33 @@ export const findVideoDuration = (courses: Course[], lessonId: string): number =
   return 0;
 };
 
+/**
+ * Finds the courseId and moduleId for a given videoId.
+ * @param courses - Array of courses with modules and videos.
+ * @param videoId - The ID of the video/lesson to find.
+ * @returns An object containing courseId and moduleId, or null if not found.
+ */
+export const findCourseAndModuleIds = (courses: Course[], videoId: string): { courseId: string; moduleId: string } | null => {
+  const videoIdStr = String(videoId);
+
+  for (const course of courses) {
+    if (course.modules && Array.isArray(course.modules)) {
+      for (const module of course.modules) {
+        if (module.videos && Array.isArray(module.videos)) {
+          const video = module.videos.find((v: Video) => {
+            const currentVideoId = v._id ? String(v._id) : (v.id ? String(v.id) : '');
+            return currentVideoId === videoIdStr;
+          });
+          if (video) {
+            return {
+              courseId: course._id,
+              moduleId: module._id || module.id || '',
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+};
