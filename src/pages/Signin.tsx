@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { API_BASE_URL } from '@/config';
+import { toast } from '@/components/ui/sonner';
 
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -26,9 +27,14 @@ const Signin: React.FC = () => {
       console.log(res.data);
       // Store the token in localStorage or context
       localStorage.setItem('token', res.data.token);
+      toast.success('Login successful!');
       navigate('/');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const errorMessage = err.response?.data?.msg || err.response?.data?.message || 'Invalid credentials. Please check your email and password.';
+      toast.error('Login Failed', {
+        description: errorMessage,
+      });
     }
   };
 
