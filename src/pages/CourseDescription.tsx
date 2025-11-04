@@ -67,7 +67,7 @@ const CourseDescription: React.FC = () => {
                       </Link>
                     </div>
                     <span className="text-sm text-gray-600">
-                      {video.duration ? new Date(video.duration * 1000).toISOString().substring(14, 19) : 'N/A'}
+                      {video.duration ? `${(video.duration / 60).toFixed(1)} min` : 'N/A'}
                     </span>
                   </div>
                 ))}

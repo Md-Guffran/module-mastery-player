@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
     // Validate that all videos have valid duration (not zero)
     const invalidVideos = newModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
     if (invalidVideos.length > 0) {
-      alert('Please ensure all videos have a duration greater than zero (in minutes).');
+      alert('Please ensure all videos have a video duration greater than zero (in minutes).');
       return;
     }
     
@@ -260,7 +260,7 @@ const AdminDashboard: React.FC = () => {
       // Validate that all videos have valid duration (not zero)
       const invalidVideos = editedModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
       if (invalidVideos.length > 0) {
-        alert('Please ensure all videos have a duration greater than zero (in minutes).');
+        alert('Please ensure all videos have a video duration greater than zero (in minutes).');
         return;
       }
       
@@ -549,7 +549,7 @@ const AdminDashboard: React.FC = () => {
                                   </div>
                           <div>
                             <Label htmlFor={`editedDuration-${index}`}>
-                              Duration (minutes) *
+                              Video Duration (minutes) *
                             </Label>
                             <Input
                               id={`editedDuration-${index}`}
@@ -674,7 +674,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                           <div>
                             <Label htmlFor={`newDuration-${index}`}>
-                              Duration (minutes) *
+                              Video Duration (minutes) *
                             </Label>
                             <Input
                               id={`newDuration-${index}`}
@@ -781,13 +781,14 @@ const AdminDashboard: React.FC = () => {
               </select>
             </div>
             <div>
-              <Label htmlFor="courseDuration">Duration</Label>
+              <Label htmlFor="courseDuration">Total Course Duration (e.g., "10 hours", "5 weeks")</Label>
               <Input
                 id="courseDuration"
                 type="text"
                 name="duration"
                 value={newCourse.duration}
                 onChange={handleNewCourseChange}
+                placeholder="e.g., 10 hours"
                 required
               />
             </div>
