@@ -34,7 +34,7 @@ export const findVideoDuration = (courses: Course[], lessonId: string): number =
  * @param videoId - The ID of the video/lesson to find.
  * @returns An object containing courseId and moduleId, or null if not found.
  */
-export const findCourseAndModuleIds = (courses: Course[], videoId: string): { courseId: string; moduleId: string } | null => {
+export const findVideoDetails = (courses: Course[], videoId: string): { courseId: string; moduleId: string; videoId: string } | null => {
   const videoIdStr = String(videoId);
 
   for (const course of courses) {
@@ -49,6 +49,7 @@ export const findCourseAndModuleIds = (courses: Course[], videoId: string): { co
             return {
               courseId: course._id,
               moduleId: module._id || module.id || '',
+              videoId: videoIdStr,
             };
           }
         }

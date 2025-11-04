@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { UserProgress, Course } from '../types/course';
 import { ProgressCard } from '../components/ProgressCard';
-import { findVideoDuration } from '../utils/videoUtils';
+import { findVideoDuration, findVideoDetails } from '../utils/videoUtils';
+import { Link } from 'react-router-dom';
 
 interface User {
   _id: string;
@@ -48,16 +49,22 @@ const UserDashboard: React.FC = () => {
         {userProgress.length > 0 ? (
           userProgress.map((item) => {
             const lessonDuration = findVideoDuration(courses, item.lessonId) || 1;
+            const videoDetails = findVideoDetails(courses, item.lessonId);
+
+            if (!videoDetails) {
+              return null; // Skip rendering if video details are not found
+            }
 
             return (
-              <ProgressCard
-                key={item._id}
-                lessonTitle={item.lessonTitle}
-                watchedSeconds={item.watchedSeconds}
-                lessonDuration={lessonDuration}
-                updatedAt={item.updatedAt}
-                completed={item.completed}
-              />
+              <Link key={item._id} to={`/course-player/${videoDetails.courseId}/${videoDetails.moduleId}/${item.lessonId}`}>
+                <ProgressCard
+                  lessonTitle={item.lessonTitle}
+                  watchedSeconds={item.watchedSeconds}
+                  lessonDuration={lessonDuration}
+                  updatedAt={item.updatedAt}
+                  completed={item.completed}
+                />
+              </Link>
             );
           })
         ) : (
