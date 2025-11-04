@@ -67,28 +67,4 @@ router.get('/modules', async (req, res) => {
   }
 });
 
-// @route   GET api/course/search
-// @desc    Search courses by title or description
-// @access  Public
-router.get('/search', async (req, res) => {
-  try {
-    const { q } = req.query;
-    if (!q) {
-      return res.status(400).json({ msg: 'Query parameter "q" is required' });
-    }
-
-    const courses = await Course.find({
-      $or: [
-        { title: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-      ],
-    }).populate('modules');
-
-    res.json(courses);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
-
 module.exports = router;
