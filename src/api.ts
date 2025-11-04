@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './config';
+
 // Define the structure for API methods
 interface ApiClient {
   get: <T>(url: string, config?: RequestInit) => Promise<T>;
@@ -14,7 +16,10 @@ const fetchWrapper = async <T>(url: string, options?: RequestInit): Promise<T> =
     ...(token ? { 'x-auth-token': token } : {}),
   };
 
-  const response = await fetch(url, { ...options, headers });
+  // Prepend API_BASE_URL if the URL doesn't already start with http
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url.startsWith('/') ? url : '/' + url}`;
+
+  const response = await fetch(fullUrl, { ...options, headers });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
     throw new Error(`API Error: ${response.status} - ${errorData.message || response.statusText}`);

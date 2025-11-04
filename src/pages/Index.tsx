@@ -69,7 +69,7 @@ const Index = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        await axios.post('/api/auth/signout', {}, {
+        await axios.post(`${API_BASE_URL}/api/auth/signout`, {}, {
           headers: { 'x-auth-token': token },
         });
       } catch (err) {

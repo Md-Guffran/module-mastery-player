@@ -60,7 +60,7 @@ const CoursePlayer = () => {
 
     const fetchCourseData = async () => {
       try {
-        const res = await axios.get(`/api/course/courses/${courseId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/course/courses/${courseId}`);
         setModules(res.data.modules);
         setLoading(false);
       } catch (err) {
@@ -127,7 +127,7 @@ const CoursePlayer = () => {
             }
           }
         }
-        await axios.post('/api/auth/signout', {}, {
+        await axios.post(`${API_BASE_URL}/api/auth/signout`, {}, {
           headers: { 'x-auth-token': token },
         });
       } catch (err) {
