@@ -9,6 +9,7 @@ import { PlusCircle, MinusCircle, Edit, Trash2, Save, Users, BarChart, VideoIcon
 import { ProgressCard } from '../components/ProgressCard';
 import { minutesToSeconds, secondsToMinutes } from '../utils/duration';
 import { findVideoDuration } from '../utils/videoUtils';
+import Header from '../components/Header';
 import {
   Accordion,
   AccordionContent,
@@ -346,8 +347,10 @@ const AdminDashboard: React.FC = () => {
   // --- Render Logic ---
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+    <>
+      <Header />
+      <div className="container mx-auto p-4 pt-24">
+        <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
       <div className="flex space-x-4 mb-8 overflow-x-auto">
         <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'}>Overview</Button>
@@ -852,7 +855,8 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

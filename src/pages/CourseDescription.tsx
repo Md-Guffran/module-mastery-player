@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/accordion';
 import { PlayCircle, FileText } from 'lucide-react';
 import { formatDurationMinutes } from '@/utils/duration';
+import Header from '../components/Header';
 
 const CourseDescription: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -94,13 +95,20 @@ const CourseDescription: React.FC = () => {
   }, [courseId]);
 
   if (!course) {
-    return <div>Loading...</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen">Loading...</div>
+      </>
+    );
   }
 
   const hasStartedCourse = userProgress.length > 0;
 
   return (
-    <div className="container mx-auto p-8">
+    <>
+      <Header />
+      <div className="container mx-auto p-8 pt-24">
       <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
       <p className="text-lg mb-4">{course.description}</p>
       <p className="text-sm mb-2">Skills: {course.skills}</p>
@@ -158,7 +166,8 @@ const CourseDescription: React.FC = () => {
           ))}
         </Accordion>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -8,10 +8,10 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { useCourseProgress } from '@/hooks/useCourseProgress';
 import { Module, Lesson } from '@/types/course';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/config';
+import Header from '@/components/Header';
 
 interface YouTubePlayer {
   getCurrentTime: () => number;
@@ -32,26 +32,8 @@ const CoursePlayer = () => {
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const res = await axios.get(`${API_BASE_URL}/api/auth`, {
-            headers: { 'x-auth-token': token },
-          });
-          setUserRole(res.data.role);
-        } catch (err) {
-          console.error('Failed to fetch user data:', err);
-          localStorage.removeItem('token');
-          navigate('/signin');
-        }
-      }
-    };
-
     const fetchCourseData = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/api/course/courses/${courseId}`);
@@ -64,14 +46,13 @@ const CoursePlayer = () => {
       }
     };
 
-    fetchUserData();
     if (courseId) {
       fetchCourseData();
     } else {
       setError('Course ID not provided.');
       setLoading(false);
     }
-  }, [courseId, navigate]);
+  }, [courseId]);
 
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const { progress, updateProgress, getProgress, getTotalProgress } = useCourseProgress();
@@ -106,33 +87,6 @@ const CoursePlayer = () => {
     }
   }, [modules, currentLesson, moduleId, videoId]);
 
-  const handleLogout = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        if (currentLesson) {
-          const playerIframe = document.getElementById(`youtube-player-${currentLesson.id}`) as HTMLIFrameElement | null;
-          if (playerIframe && playerIframe.contentWindow && 'YT' in playerIframe.contentWindow) {
-            const playerWindow = playerIframe.contentWindow as unknown as YouTubePlayerWindow;
-            const player = playerWindow.YT.get(playerIframe.id);
-            if (player && typeof player.getCurrentTime === 'function') {
-              const currentTime = player.getCurrentTime();
-              updateProgress(currentLesson.id, { watchedSeconds: currentTime, lessonTitle: currentLesson.title });
-            }
-          }
-        }
-        await axios.post(`${API_BASE_URL}/api/auth/signout`, {}, {
-          headers: { 'x-auth-token': token },
-        });
-      } catch (err) {
-        console.error('Failed to sign out:', err);
-      } finally {
-        localStorage.removeItem('token');
-        setUserRole(null);
-        navigate('/signin');
-      }
-    }
-  };
 
   const allLessons = modules.flatMap(m => m.videos.map(video => ({
     id: video._id,
@@ -163,31 +117,36 @@ const CoursePlayer = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading modules...</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen">Loading modules...</div>
+      </>
+    );
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen text-red-500">{error}</div>
+      </>
+    );
   }
 
   if (!currentLesson) {
-    return <div className="flex justify-center items-center h-screen">No lessons available.</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen">No lessons available.</div>
+      </>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <div className="absolute top-4 right-4 z-10 flex space-x-2">
-        {userRole === 'admin' && (
-          <Button asChild>
-            <Link to="/admin">Go to Dashboard</Link>
-          </Button>
-        )}
-        {localStorage.getItem('token') && (
-          <Button onClick={handleLogout} variant="outline">
-            <LogOut className="w-4 h-4 mr-2" /> Logout
-          </Button>
-        )}
-      </div>
+    <>
+      <Header />
+      <div className="flex h-screen bg-background overflow-hidden pt-16">
       <CourseSidebar
         modules={modules.map(m => ({
           ...m,
@@ -283,7 +242,8 @@ const CoursePlayer = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

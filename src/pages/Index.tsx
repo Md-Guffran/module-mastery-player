@@ -3,12 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Course } from '@/types/course';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
-import ThemeToggle from '../components/ThemeToggle';
 import CourseSearchBar from '../components/CourseSearchBar';
 import { UserProgress } from '@/types/course';
+import Header from '../components/Header';
 
 const Index = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -88,52 +86,29 @@ const Index = () => {
     fetchCourses();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        await axios.post(`${API_BASE_URL}/api/auth/signout`, {}, {
-          headers: { 'x-auth-token': token },
-        });
-      } catch (err) {
-        console.error('Failed to sign out:', err);
-      } finally {
-        localStorage.removeItem('token');
-        setUserRole(null);
-        navigate('/signin');
-      }
-    }
-  };
-
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading courses...</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen">Loading courses...</div>
+      </>
+    );
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center h-screen text-red-500">{error}</div>
+      </>
+    );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="absolute top-4 right-4 z-10 flex space-x-2 items-center">
-        {userRole === 'admin' && (
-          <Button asChild>
-            <Link to="/admin">Admin Dashboard</Link>
-          </Button>
-        )}
-        {userRole !== 'admin' && localStorage.getItem('token') && (
-          <Button asChild>
-            <Link to="/dashboard">My Progress Dashboard</Link>
-          </Button>
-        )}
-        {localStorage.getItem('token') && (
-          <Button onClick={handleLogout} variant="outline">
-            <LogOut className="w-4 h-4 mr-2" /> Logout
-          </Button>
-        )}
-        <ThemeToggle />
-      </div>
-      <h1 className="text-4xl font-bold text-center mb-10 text-foreground">Course Catalog</h1>
+    <>
+      <Header />
+      <div className="container mx-auto p-6 pt-24">
+        <h1 className="text-4xl font-bold text-center mb-10 text-foreground">Course Catalog</h1>
       <div className="mb-8">
         <CourseSearchBar onCourseSelect={handleCourseSelect} onSearchChange={setSearchTerm} />
       </div>
@@ -176,7 +151,8 @@ const Index = () => {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

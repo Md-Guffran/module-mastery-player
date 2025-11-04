@@ -4,6 +4,7 @@ import { UserProgress, Course } from '../types/course';
 import { ProgressCard } from '../components/ProgressCard';
 import { findVideoDuration, findVideoDetails } from '../utils/videoUtils';
 import { Link } from 'react-router-dom';
+import Header from '../components/Header';
 
 interface User {
   _id: string;
@@ -42,8 +43,10 @@ const UserDashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Progress Dashboard</h1>
+    <>
+      <Header />
+      <div className="container mx-auto p-4 pt-24">
+        <h1 className="text-2xl font-bold mb-4">My Progress Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4">
         {userProgress.length > 0 ? (
@@ -71,7 +74,8 @@ const UserDashboard: React.FC = () => {
           <p>No progress found yet. Start a course to see your progress here!</p>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
