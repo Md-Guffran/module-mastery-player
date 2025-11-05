@@ -12,9 +12,23 @@ const CourseSchema = new Schema({
     type: String,
     required: true,
   },
-  modules: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Module',
+  weeks: [{
+    weekNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    days: [{
+      dayNumber: {
+        type: Number,
+        required: true,
+        min: 1,
+      },
+      modules: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Module',
+      }],
+    }],
   }],
   skills: {
     type: String,

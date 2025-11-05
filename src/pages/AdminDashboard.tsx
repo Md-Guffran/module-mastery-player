@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Module, Video, UserProgress, Course } from '../types/course'; // Assuming Course type exists or will be defined
+import { Module, Video, UserProgress, Course, Week, Day } from '../types/course'; // Assuming Course type exists or will be defined
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
@@ -52,6 +52,8 @@ const AdminDashboard: React.FC = () => {
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
@@ -60,7 +62,7 @@ const AdminDashboard: React.FC = () => {
   const [newCourse, setNewCourse] = useState<Course>({
     title: '',
     description: '',
-    modules: [],
+    weeks: [], // Changed from modules to weeks
     skills: '',
     tools: '',
     level: 'beginner',
@@ -69,22 +71,33 @@ const AdminDashboard: React.FC = () => {
   });
   const [selectedCourseIdForModules, setSelectedCourseIdForModules] = useState<string | null>(null); // To track which course's modules are being managed
 
-  // Fetch modules for a specific course
-  const fetchModulesForCourse = async (courseId: string) => {
+  // Fetch course details including weeks, days, and modules
+  const fetchCourseDetails = async (courseId: string) => {
     try {
-      const res = await api.get<Module[]>(`/api/admin/courses/${courseId}/modules`); // Assuming an endpoint to fetch modules for a specific course
-      setModules(res);
+      const res = await api.get<Course>(`/api/admin/courses/${courseId}`); // Assuming an endpoint to fetch a single course with its full structure
+      // Flatten the modules for easier management in the current state structure
+      const allModules: Module[] = [];
+      res.weeks.forEach(week => {
+        week.days.forEach(day => {
+          day.modules.forEach(module => {
+            allModules.push(module);
+          });
+        });
+      });
+      setModules(allModules);
+      // Set the newCourse state to the fetched course for editing if needed
+      setNewCourse(res);
     } catch (err) {
-      console.error('Failed to fetch modules for course:', err);
+      console.error('Failed to fetch course details:', err);
     }
   };
 
   useEffect(() => {
     fetchStats();
     fetchCourses(); // Fetch courses when component mounts or viewMode changes
-    // Fetch modules only when 'modules' view is active or when creating/editing a course
-    if (viewMode === 'modules' && selectedCourseIdForModules) {
-      fetchModulesForCourse(selectedCourseIdForModules);
+    // Fetch course details only when 'modules' view is active or when creating/editing a course
+    if ((viewMode === 'modules' || viewMode === 'manage-course') && selectedCourseIdForModules) {
+      fetchCourseDetails(selectedCourseIdForModules);
     }
     if (viewMode === 'users') {
       fetchUsers();
@@ -150,7 +163,11 @@ const AdminDashboard: React.FC = () => {
 
   // Handlers for new module creation (within a course context)
   const handleNewModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewModule({ ...newModule, title: e.target.value });
+    const { name, value } = e.target;
+    setNewModule(prevModule => ({
+      ...prevModule,
+      [name]: value,
+    }));
   };
 
   const handleNewVideoChange = (
@@ -178,19 +195,33 @@ const AdminDashboard: React.FC = () => {
   // Handler for submitting a new module to the selected course
   const handleSubmitNewModule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourseIdForModules) {
-      alert('Please select a course to add modules to.');
+    if (!selectedCourseIdForModules || selectedWeek === null || selectedDay === null) {
+      alert('Please enter a course, week number, and day number.');
       return;
     }
-    
+
     // Validate that all videos have valid duration (not zero)
     const invalidVideos = newModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
     if (invalidVideos.length > 0) {
       alert('Please ensure all videos have a video duration greater than zero (in minutes).');
       return;
     }
-    
+
     try {
+      // Ensure week exists, create if it doesn't
+      const weekExists = await ensureWeekExists(selectedCourseIdForModules, selectedWeek);
+      if (!weekExists) {
+        alert('Failed to create or find week.');
+        return;
+      }
+
+      // Ensure day exists, create if it doesn't
+      const dayExists = await ensureDayExists(selectedCourseIdForModules, selectedWeek, selectedDay);
+      if (!dayExists) {
+        alert('Failed to create or find day.');
+        return;
+      }
+
       // Convert minutes to seconds before sending
       const moduleToSubmit = {
         ...newModule,
@@ -199,20 +230,23 @@ const AdminDashboard: React.FC = () => {
           duration: minutesToSeconds(Number(video.duration))
         }))
       };
-      
-      // Assuming POST /api/admin/courses/:courseId/modules creates a new module for the specified course
-      const res = await api.post<Module>(`/api/admin/courses/${selectedCourseIdForModules}/modules`, moduleToSubmit);
+
+      // POST /api/admin/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules creates a new module
+      const res = await api.post<Module>(
+        `/api/admin/courses/${selectedCourseIdForModules}/weeks/${selectedWeek}/days/${selectedDay}/modules`,
+        moduleToSubmit
+      );
       alert('Module created successfully');
       setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0 }] }); // Reset form
-      fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
+      // Keep week and day selected for next module
+      fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
     } catch (err) {
       console.error('Failed to create module:', err);
       alert('Failed to create module');
     }
   };
 
-  // Handlers for editing an existing module
-  const handleEditModule = (module: Module) => {
+  const handleEditModule = (module: Module, weekNumber: number, dayNumber: number) => {
     setEditingModuleId(module._id || module.id || null);
     setEditedModule({
       ...module,
@@ -227,7 +261,11 @@ const AdminDashboard: React.FC = () => {
 
   const handleEditedModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (editedModule) {
-      setEditedModule({ ...editedModule, title: e.target.value });
+      const { name, value } = e.target;
+      setEditedModule(prevModule => ({
+        ...prevModule!,
+        [name]: value,
+      }));
     }
   };
 
@@ -284,7 +322,7 @@ const AdminDashboard: React.FC = () => {
         setEditingModuleId(null);
         setEditedModule(null);
         if (selectedCourseIdForModules) {
-          fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
+          fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
         }
       } catch (err) {
         console.error('Failed to update module:', err);
@@ -297,15 +335,105 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this module?')) {
       try {
         // Assuming DELETE /api/admin/modules/:moduleId deletes a module
-        const res = await api.delete<void>(`/api/admin/modules/${moduleId}`);
+        const res = await api.delete<void>(`/api/admin/modules/${moduleId}`); // Assuming this endpoint still works for deleting a module
         alert('Module deleted successfully');
         if (selectedCourseIdForModules) {
-          fetchModulesForCourse(selectedCourseIdForModules); // Refresh modules list for the current course
+          fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
         }
       } catch (err) {
         console.error('Failed to delete module:', err);
         alert('Failed to delete module');
       }
+    }
+  };
+
+  // --- Week and Day Management Handlers ---
+  
+  // Helper function to ensure week exists, create if it doesn't
+  const ensureWeekExists = async (courseId: string, weekNumber: number): Promise<boolean> => {
+    try {
+      const course = await api.get<Course>(`/api/admin/courses/${courseId}`);
+      const weekExists = course.weeks.some(w => w.weekNumber === weekNumber);
+      
+      if (!weekExists) {
+        try {
+          await api.post(`/api/admin/courses/${courseId}/weeks`, { weekNumber });
+        } catch (error: any) {
+          // If week already exists (400 error), that's fine
+          if (error?.response?.status === 400) {
+            return true;
+          }
+          throw error;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to ensure week exists:', error);
+      return false;
+    }
+  };
+
+  // Helper function to ensure day exists, create if it doesn't
+  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number): Promise<boolean> => {
+    try {
+      // First ensure week exists
+      const weekOk = await ensureWeekExists(courseId, weekNumber);
+      if (!weekOk) {
+        return false;
+      }
+
+      // Then check and create day if needed
+      const course = await api.get<Course>(`/api/admin/courses/${courseId}`);
+      const week = course.weeks.find(w => w.weekNumber === weekNumber);
+      
+      if (!week) {
+        return false;
+      }
+
+      const dayExists = week.days.some(d => d.dayNumber === dayNumber);
+      if (!dayExists) {
+        try {
+          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber });
+        } catch (error: any) {
+          // If day already exists (400 error), that's fine
+          if (error?.response?.status === 400) {
+            return true;
+          }
+          throw error;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to ensure day exists:', error);
+      return false;
+    }
+  };
+
+  const handleDeleteWeek = async (weekNumber: number) => {
+    if (!selectedCourseIdForModules || !window.confirm(`Are you sure you want to delete Week ${weekNumber} and all its content?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${weekNumber}`);
+      alert(`Week ${weekNumber} deleted successfully.`);
+      fetchCourseDetails(selectedCourseIdForModules);
+    } catch (error) {
+      console.error('Failed to delete week:', error);
+      alert('Failed to delete week.');
+    }
+  };
+
+  const handleDeleteDay = async (weekNumber: number, dayNumber: number) => {
+    if (!selectedCourseIdForModules || !window.confirm(`Are you sure you want to delete Day ${dayNumber} from Week ${weekNumber} and all its content?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${weekNumber}/days/${dayNumber}`);
+      alert(`Day ${dayNumber} from Week ${weekNumber} deleted successfully.`);
+      fetchCourseDetails(selectedCourseIdForModules);
+    } catch (error) {
+      console.error('Failed to delete day:', error);
+      alert('Failed to delete day.');
     }
   };
 
@@ -318,9 +446,11 @@ const AdminDashboard: React.FC = () => {
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post<Course>('/api/admin/courses', newCourse); // Assuming POST /api/admin/courses creates a new course
+      // Ensure the new course has an empty 'weeks' array if not already present
+      const courseToCreate = { ...newCourse, weeks: newCourse.weeks || [] };
+      const response = await api.post<Course>('/api/admin/courses', courseToCreate); // Assuming POST /api/admin/courses creates a new course
       alert('Course created successfully!');
-      const newCourseReset = { title: '', description: '', modules: [], skills: '', tools: '', level: 'beginner' as 'beginner', duration: '0', _id: '' };
+      const newCourseReset = { title: '', description: '', weeks: [], skills: '', tools: '', level: 'beginner' as const, duration: '0', _id: '' };
       if (response && response._id) {
         newCourseReset._id = response._id;
       }
@@ -341,8 +471,33 @@ const AdminDashboard: React.FC = () => {
   const handleSelectCourseForModules = (courseId: string) => {
     setSelectedCourseIdForModules(courseId);
     setViewMode('modules'); // Switch to modules view
-    fetchModulesForCourse(courseId); // Fetch modules for the selected course
+    fetchCourseDetails(courseId); // Fetch modules for the selected course
   };
+
+  // Helper to group modules by week and then by day
+  const groupModulesByWeekAndDay = (course: Course | null) => {
+    const groupedByWeek: { [week: number]: { [day: number]: Module[] } } = {};
+    if (course && course.weeks) {
+      course.weeks.forEach(week => {
+        if (!groupedByWeek[week.weekNumber]) {
+          groupedByWeek[week.weekNumber] = {};
+        }
+        week.days.forEach(day => {
+          if (!groupedByWeek[week.weekNumber][day.dayNumber]) {
+            groupedByWeek[week.weekNumber][day.dayNumber] = [];
+          }
+          day.modules.forEach(module => {
+            groupedByWeek[week.weekNumber][day.dayNumber].push(module);
+          });
+        });
+      });
+    }
+    return groupedByWeek;
+  };
+
+  const currentCourse = courses.find(c => c._id === selectedCourseIdForModules) || null;
+  const groupedContentByWeek = groupModulesByWeekAndDay(currentCourse);
+  const sortedWeeks = Object.keys(groupedContentByWeek).map(Number).sort((a, b) => a - b);
 
   // --- Render Logic ---
 
@@ -357,7 +512,7 @@ const AdminDashboard: React.FC = () => {
         <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'}>Users</Button>
         <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'}>Daily Activity</Button>
         <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'}>Student Progress</Button>
-        <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'}>Manage Modules</Button>
+        <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'}>Manage Course Content</Button>
         <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'}>Create Course</Button>
       </div>
 
@@ -455,7 +610,7 @@ const AdminDashboard: React.FC = () => {
 
       {viewMode === 'modules' && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Manage Modules</h2>
+          <h2 className="text-lg font-semibold mb-4">Manage Course Content</h2>
           {/* Course selection for module management */}
           <div className="mb-4">
             <Label htmlFor="courseSelect" className="mr-2 dark:text-gray-200">Select Course:</Label>
@@ -463,8 +618,8 @@ const AdminDashboard: React.FC = () => {
               id="courseSelect"
               value={selectedCourseIdForModules || ''}
               onChange={(e) => handleSelectCourseForModules(e.target.value)}
-              className="p-2 border rounded 
-               bg-white text-gray-900 border-gray-300 
+              className="p-2 border rounded
+               bg-white text-gray-900 border-gray-300
                focus:ring-indigo-500 focus:border-indigo-500
                dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
             >
@@ -482,147 +637,205 @@ const AdminDashboard: React.FC = () => {
 
           {selectedCourseIdForModules && (
             <>
-              <h3 className="text-md font-semibold mb-2">Modules for: {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h3>
-              <Accordion type="single" collapsible className="w-full">
-                {modules.map((moduleItem) => (
-                  <AccordionItem key={moduleItem._id || moduleItem.id} value={moduleItem._id || moduleItem.id || ''}>
-                    <AccordionTrigger>
-                      {editingModuleId === (moduleItem._id || moduleItem.id) ? (
-                        <Input
-                          type="text"
-                          value={editedModule?.title || ''}
-                          onChange={handleEditedModuleChange}
-                          onClick={(e) => e.stopPropagation()} // Prevent accordion from toggling
-                          className="w-full"
-                        />
-                      ) : (
-                        moduleItem.title
-                      )}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {editingModuleId === (moduleItem._id || moduleItem.id) ? (
-                        <div className="space-y-4 p-4">
-                          <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
-                          {editedModule?.videos.map((video, index) => (
-                            <Card key={index} className="mb-4 p-4 text-foreground">
-                              <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <Label htmlFor={`editedVideoTitle-${index}`}>Video Title</Label>
-                                    <Input
-                                      id={`editedVideoTitle-${index}`}
-                                      type="text"
-                                      name="title"
-                                      value={video.title}
-                                      onChange={(e) => handleEditedVideoChange(index, e)}
-                                      required
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`editedVideoUrl-${index}`}>Video URL</Label>
-                                    <Input
-                                      id={`editedVideoUrl-${index}`}
-                                      type="url"
-                                      name="url"
-                                      value={video.url}
-                                      onChange={(e) => handleEditedVideoChange(index, e)}
-                                      required
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`editedResourcesUrl-${index}`}>
-                                      Resources URL (Optional)
-                                    </Label>
-                                    <Input
-                                      id={`editedResourcesUrl-${index}`}
-                                      type="url"
-                                      name="resourcesUrl"
-                                      value={video.resourcesUrl || ''}
-                                      onChange={(e) => handleEditedVideoChange(index, e)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`editedNotesUrl-${index}`}>
-                                      Notes URL (Optional)
-                                    </Label>
-                                    <Input
-                                      id={`editedNotesUrl-${index}`}
-                                      type="url"
-                                      name="notesUrl"
-                                      value={video.notesUrl || ''}
-                                      onChange={(e) => handleEditedVideoChange(index, e)}
-                                    />
-                                  </div>
-                          <div>
-                            <Label htmlFor={`editedDuration-${index}`}>
-                              Video Duration (minutes) *
-                            </Label>
-                            <Input
-                              id={`editedDuration-${index}`}
-                              type="number"
-                              name="duration"
-                              min="1"
-                              step="0.1"
-                              value={video.duration || ''}
-                              onChange={(e) => handleEditedVideoChange(index, e)}
-                              required
-                            />
-                          </div>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  onClick={() => removeEditedVideoField(index)}
-                                  className="mt-4"
-                                >
-                                  Remove Video
-                                </Button>
-                              </CardContent>
-                            </Card>
-                          ))}
-                          <Button type="button" onClick={addEditedVideoField} className="mr-2">
-                            <PlusCircle className="w-4 h-4 mr-2" /> Add Video
-                          </Button>
-                          <Button onClick={handleUpdateModule} className="mr-2">
-                            <Save className="w-4 h-4 mr-2" /> Save Changes
-                          </Button>
-                          <Button variant="outline" onClick={() => setEditingModuleId(null)}>
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-end space-x-2 p-4">
-                          <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem)}>
-                            <Edit className="w-4 h-4 mr-2" /> Edit
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')}>
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </Button>
-                        </div>
-                      )}
-                      <div className="space-y-2 p-4">
-                        {moduleItem.videos.map((video) => (
-                          <div key={video._id} className="border p-2 rounded">
-                            <p className="font-semibold">{video.title}</p>
-                            <p className="text-sm text-muted-foreground">{video.url}</p>
-                          </div>
-                        ))}
+              <h3 className="text-md font-semibold mb-2">Content for: {currentCourse?.title}</h3>
+
+              {sortedWeeks.length > 0 ? (
+                sortedWeeks.map(weekNumber => {
+                  const weekContent = groupedContentByWeek[weekNumber];
+                  const sortedDays = Object.keys(weekContent).map(Number).sort((a, b) => a - b);
+                  return (
+                    <div key={weekNumber} className="mb-8 border rounded-lg shadow-sm bg-gray-100 dark:bg-gray-900 p-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Week {weekNumber}</h4>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteWeek(weekNumber)}>
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete Week
+                        </Button>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                      {sortedDays.map(dayNumber => {
+                        const sortedModulesForDay = weekContent[dayNumber].sort((a, b) => (a.title || '').localeCompare(b.title || '')); // Sort modules by title
+                        return (
+                          <div key={`${weekNumber}-${dayNumber}`} className="mb-6 border rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800 p-4">
+                            <div className="flex justify-between items-center mb-4">
+                              <h5 className="text-xl font-bold text-gray-800 dark:text-gray-100">Day {dayNumber}</h5>
+                              <Button variant="destructive" size="sm" onClick={() => handleDeleteDay(weekNumber, dayNumber)}>
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete Day
+                              </Button>
+                            </div>
+                            <Accordion type="single" collapsible className="w-full">
+                              {sortedModulesForDay.map((moduleItem) => (
+                                <AccordionItem key={moduleItem._id || moduleItem.id} value={moduleItem._id || moduleItem.id || ''}>
+                                  <AccordionTrigger>
+                                    {editingModuleId === (moduleItem._id || moduleItem.id) ? (
+                                      <div className="flex flex-col w-full">
+                                        <Input
+                                          type="text"
+                                          name="title"
+                                          value={editedModule?.title || ''}
+                                          onChange={handleEditedModuleChange}
+                                          onClick={(e) => e.stopPropagation()} // Prevent accordion from toggling
+                                          className="w-full mb-2"
+                                        />
+                                      </div>
+                                    ) : (
+                                      moduleItem.title
+                                    )}
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    {editingModuleId === (moduleItem._id || moduleItem.id) ? (
+                                      <div className="space-y-4 p-4">
+                                        <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
+                                        {editedModule?.videos.map((video, index) => (
+                                          <Card key={index} className="mb-4 p-4 text-foreground">
+                                            <CardContent>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                  <Label htmlFor={`editedVideoTitle-${index}`}>Video Title</Label>
+                                                  <Input
+                                                    id={`editedVideoTitle-${index}`}
+                                                    type="text"
+                                                    name="title"
+                                                    value={video.title}
+                                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                                    required
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor={`editedVideoUrl-${index}`}>Video URL</Label>
+                                                  <Input
+                                                    id={`editedVideoUrl-${index}`}
+                                                    type="url"
+                                                    name="url"
+                                                    value={video.url}
+                                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                                    required
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor={`editedResourcesUrl-${index}`}>
+                                                    Resources URL (Optional)
+                                                  </Label>
+                                                  <Input
+                                                    id={`editedResourcesUrl-${index}`}
+                                                    type="url"
+                                                    name="resourcesUrl"
+                                                    value={video.resourcesUrl || ''}
+                                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor={`editedNotesUrl-${index}`}>
+                                                    Notes URL (Optional)
+                                                  </Label>
+                                                  <Input
+                                                    id={`editedNotesUrl-${index}`}
+                                                    type="url"
+                                                    name="notesUrl"
+                                                    value={video.notesUrl || ''}
+                                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor={`editedDuration-${index}`}>
+                                                    Video Duration (minutes) *
+                                                  </Label>
+                                                  <Input
+                                                    id={`editedDuration-${index}`}
+                                                    type="number"
+                                                    name="duration"
+                                                    min="1"
+                                                    step="0.1"
+                                                    value={video.duration || ''}
+                                                    onChange={(e) => handleEditedVideoChange(index, e)}
+                                                    required
+                                                  />
+                                                </div>
+                                              </div>
+                                              <Button
+                                                type="button"
+                                                variant="destructive"
+                                                onClick={() => removeEditedVideoField(index)}
+                                                className="mt-4"
+                                              >
+                                                Remove Video
+                                              </Button>
+                                            </CardContent>
+                                          </Card>
+                                        ))}
+                                        <Button type="button" onClick={addEditedVideoField} className="mr-2">
+                                          <PlusCircle className="w-4 h-4 mr-2" /> Add Video
+                                        </Button>
+                                        <Button onClick={handleUpdateModule} className="mr-2">
+                                          <Save className="w-4 h-4 mr-2" /> Save Changes
+                                        </Button>
+                                        <Button variant="outline" onClick={() => setEditingModuleId(null)}>
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex justify-end space-x-2 p-4">
+                                        <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem, weekNumber, dayNumber)}>
+                                          <Edit className="w-4 h-4 mr-2" /> Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')}>
+                                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                        </Button>
+                                      </div>
+                                    )}
+                                    <div className="space-y-2 p-4">
+                                      {moduleItem.videos.map((video) => (
+                                        <div key={video._id} className="border p-2 rounded">
+                                          <p className="font-semibold">{video.title}</p>
+                                          <p className="text-sm text-muted-foreground">{video.url}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })
+              ) : (
+                <p>No content found for this course. Add weeks, days, and modules.</p>
+              )}
 
               <div className="mt-8">
-                <h2 className="text-lg font-semibold mb-4">Create New Module for {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h2>
+                <h2 className="text-lg font-semibold mb-4">Create New Module</h2>
                 <form onSubmit={handleSubmitNewModule} className="space-y-4">
                   <div>
                     <Label htmlFor="moduleTitle">Module Title</Label>
                     <Input
                       id="moduleTitle"
                       type="text"
+                      name="title"
                       value={newModule.title}
                       onChange={handleNewModuleChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="moduleWeek">Week Number</Label>
+                    <Input
+                      id="moduleWeek"
+                      type="number"
+                      value={selectedWeek || ''}
+                      onChange={(e) => setSelectedWeek(Number(e.target.value) || null)}
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="moduleDay">Day Number</Label>
+                    <Input
+                      id="moduleDay"
+                      type="number"
+                      value={selectedDay || ''}
+                      onChange={(e) => setSelectedDay(Number(e.target.value) || null)}
+                      min="1"
                       required
                     />
                   </div>
@@ -697,7 +910,7 @@ const AdminDashboard: React.FC = () => {
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={() => removeEditedVideoField(index)}
+                          onClick={() => removeNewVideoField(index)}
                           className="mt-4"
                         >
                           Remove Video
@@ -708,7 +921,7 @@ const AdminDashboard: React.FC = () => {
                   <Button type="button" onClick={addNewVideoField} className="mr-2">
                     Add Video
                   </Button>
-                  <Button type="submit">Create Module</Button>
+                  <Button type="submit" disabled={selectedWeek === null || selectedDay === null}>Create Module</Button>
                 </form>
               </div>
             </>
@@ -738,10 +951,10 @@ const AdminDashboard: React.FC = () => {
                 name="description"
                 value={newCourse.description}
                 onChange={handleNewCourseChange}
-                className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2 
-             bg-white text-gray-900 placeholder-gray-500 
-             border border-gray-300 
-             focus:border-indigo-500 focus:ring-indigo-500 
+                className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2
+             bg-white text-gray-900 placeholder-gray-500
+             border border-gray-300
+             focus:border-indigo-500 focus:ring-indigo-500
              dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
                 required
               />
@@ -775,9 +988,9 @@ const AdminDashboard: React.FC = () => {
                 name="level"
                 value={newCourse.level}
                 onChange={handleNewCourseChange}
-                className="p-2 border rounded mt-1 block w-full shadow-sm sm:text-sm 
-             bg-white text-gray-900 border-gray-300 
-             focus:border-indigo-500 focus:ring-indigo-500 
+                className="p-2 border rounded mt-1 block w-full shadow-sm sm:text-sm
+             bg-white text-gray-900 border-gray-300
+             focus:border-indigo-500 focus:ring-indigo-500
              dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
                 required
               >
@@ -806,9 +1019,9 @@ const AdminDashboard: React.FC = () => {
 
       {viewMode === 'manage-course' && selectedCourseIdForModules && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Manage Course: {courses.find(c => c._id === selectedCourseIdForModules)?.title}</h2>
+          <h2 className="text-lg font-semibold mb-4">Manage Course: {currentCourse?.title}</h2>
           <Button variant="outline" onClick={() => setViewMode('modules')} className="mb-4">
-            Back to Module List
+            Back to Course Content Management
           </Button>
           {/* This section could potentially show course details and allow editing them */}
           {/* For now, it just serves as a confirmation and a way to go back */}

@@ -21,6 +21,16 @@ export interface Module {
   lessons?: Lesson[];
 }
 
+export interface Day {
+  dayNumber: number;
+  modules: Module[];
+}
+
+export interface Week {
+  weekNumber: number;
+  days: Day[];
+}
+
 export interface Video {
   _id?: string;
   id?: string;
@@ -36,7 +46,7 @@ export interface Course {
   id?: any;
   title: string;
   description: string;
-  modules: Module[];
+  weeks: Week[]; // Changed from modules to weeks
   skills: string;
   tools: string;
   level: 'beginner' | 'intermediate' | 'advanced';

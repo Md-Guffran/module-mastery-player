@@ -92,11 +92,11 @@ router.get('/daily-activity', auth, isAdmin, async (req, res) => {
 });
 
 // @route   POST api/admin/modules
-// @desc    Create a new module
+// @desc    Create a new module (standalone, not tied to course yet)
 // @access  Admin
-router.post('/modules', auth, isAdmin, async (req, res) => { // Changed route to /modules to be more specific
+router.post('/modules', auth, isAdmin, async (req, res) => {
   try {
-    const { title, videos } = req.body;
+    const { title, videos } = req.body; // Removed week and day from module creation
 
     const newModule = new Module({
       title,
@@ -116,7 +116,7 @@ router.post('/modules', auth, isAdmin, async (req, res) => { // Changed route to
 // @access  Admin
 router.put('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
-    const { title, videos } = req.body;
+    const { title, videos } = req.body; // Removed week and day from module update
     const moduleFields = { title, videos };
 
     const module = await Module.findByIdAndUpdate(
@@ -174,7 +174,7 @@ router.get('/progress', auth, isAdmin, async (req, res) => {
 // @access  Admin
 router.post('/courses', auth, isAdmin, async (req, res) => {
   try {
-    const { title, description,skills,tools,level,duration, modules } = req.body;
+    const { title, description, skills, tools, level, duration, weeks } = req.body; // Changed from modules to weeks
 
     // Basic validation
     if (!title || !description) {
@@ -188,7 +188,7 @@ router.post('/courses', auth, isAdmin, async (req, res) => {
       tools,
       level,
       duration,
-      modules: modules || [], // Initialize with empty modules array if not provided
+      weeks: weeks || [], // Initialize with empty weeks array if not provided
     });
 
     await newCourse.save(); // Save to database
@@ -205,7 +205,10 @@ router.post('/courses', auth, isAdmin, async (req, res) => {
 // @access  Authenticated Users (Admin and regular users)
 router.get('/courses', auth, async (req, res) => {
   try {
-    const courses = await Course.find().populate('modules'); // Populate modules for detailed view
+    const courses = await Course.find().populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
     res.json(courses);
   } catch (err) {
     console.error('Error fetching courses:', err.message);
@@ -213,52 +216,190 @@ router.get('/courses', auth, async (req, res) => {
   }
 });
 
-// @route   GET api/admin/courses/:courseId/modules
-// @desc    Get modules for a specific course
+// @route   GET api/admin/courses/:courseId
+// @desc    Get a single course with its full content structure
 // @access  Authenticated Users (Admin and regular users)
-router.get('/courses/:courseId/modules', auth, async (req, res) => {
+router.get('/courses/:courseId', auth, async (req, res) => {
   try {
-    const course = await Course.findById(req.params.courseId).populate('modules');
+    const course = await Course.findById(req.params.courseId).populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
     if (!course) {
       return res.status(404).json({ msg: 'Course not found' });
     }
-    res.json(course.modules);
+    res.json(course);
   } catch (err) {
-    console.error('Error fetching modules for course:', err.message);
+    console.error('Error fetching course details:', err.message);
     res.status(500).send('Server Error');
   }
 });
 
-// @route   POST api/admin/courses/:courseId/modules
-// @desc    Add a module to a course
+// @route   POST api/admin/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules
+// @desc    Add a module to a specific day within a week of a course
 // @access  Admin
-router.post('/courses/:courseId/modules', auth, isAdmin, async (req, res) => {
+router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth, isAdmin, async (req, res) => {
   try {
-    const course = await Course.findById(req.params.courseId);
+    const { courseId, weekNumber, dayNumber } = req.params;
+    const { title, videos } = req.body;
+
+    const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ msg: 'Course not found' });
     }
 
-    const { title, videos } = req.body;
+    const week = course.weeks.find(w => w.weekNumber === Number(weekNumber));
+    if (!week) {
+      return res.status(404).json({ msg: `Week ${weekNumber} not found in course.` });
+    }
 
-    // Create new module
+    const day = week.days.find(d => d.dayNumber === Number(dayNumber));
+    if (!day) {
+      return res.status(404).json({ msg: `Day ${dayNumber} not found in Week ${weekNumber}.` });
+    }
+
     const newModule = new Module({
       title,
-      videos
+      videos,
     });
 
-    // Save the module
     const savedModule = await newModule.save();
-
-    // Add module reference to course
-    course.modules.push(savedModule._id);
+    day.modules.push(savedModule._id);
     await course.save();
 
-    // Return the populated course
-    const updatedCourse = await Course.findById(req.params.courseId).populate('modules');
-    res.json(updatedCourse);
+    const updatedCourse = await Course.findById(courseId).populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
+    res.status(201).json(updatedCourse);
   } catch (err) {
     console.error('Error adding module to course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   POST api/admin/courses/:courseId/weeks
+// @desc    Add a new week to a course
+// @access  Admin
+router.post('/courses/:courseId/weeks', auth, isAdmin, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { weekNumber } = req.body;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    if (course.weeks.some(w => w.weekNumber === weekNumber)) {
+      return res.status(400).json({ msg: `Week ${weekNumber} already exists.` });
+    }
+
+    course.weeks.push({ weekNumber, days: [] });
+    await course.save();
+
+    const updatedCourse = await Course.findById(courseId).populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
+    res.status(201).json(updatedCourse);
+  } catch (err) {
+    console.error('Error adding week to course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   POST api/admin/courses/:courseId/weeks/:weekNumber/days
+// @desc    Add a new day to a specific week of a course
+// @access  Admin
+router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (req, res) => {
+  try {
+    const { courseId, weekNumber } = req.params;
+    const { dayNumber } = req.body;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    const week = course.weeks.find(w => w.weekNumber === Number(weekNumber));
+    if (!week) {
+      return res.status(404).json({ msg: `Week ${weekNumber} not found in course.` });
+    }
+
+    if (week.days.some(d => d.dayNumber === dayNumber)) {
+      return res.status(400).json({ msg: `Day ${dayNumber} already exists in Week ${weekNumber}.` });
+    }
+
+    week.days.push({ dayNumber, modules: [] });
+    await course.save();
+
+    const updatedCourse = await Course.findById(courseId).populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
+    res.status(201).json(updatedCourse);
+  } catch (err) {
+    console.error('Error adding day to week:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   DELETE api/admin/courses/:courseId/weeks/:weekNumber
+// @desc    Delete a week from a course
+// @access  Admin
+router.delete('/courses/:courseId/weeks/:weekNumber', auth, isAdmin, async (req, res) => {
+  try {
+    const { courseId, weekNumber } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    const initialWeekCount = course.weeks.length;
+    course.weeks = course.weeks.filter(w => w.weekNumber !== Number(weekNumber));
+
+    if (course.weeks.length === initialWeekCount) {
+      return res.status(404).json({ msg: `Week ${weekNumber} not found.` });
+    }
+
+    await course.save();
+    res.json({ msg: `Week ${weekNumber} removed successfully.` });
+  } catch (err) {
+    console.error('Error deleting week from course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   DELETE api/admin/courses/:courseId/weeks/:weekNumber/days/:dayNumber
+// @desc    Delete a day from a specific week of a course
+// @access  Admin
+router.delete('/courses/:courseId/weeks/:weekNumber/days/:dayNumber', auth, isAdmin, async (req, res) => {
+  try {
+    const { courseId, weekNumber, dayNumber } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    const week = course.weeks.find(w => w.weekNumber === Number(weekNumber));
+    if (!week) {
+      return res.status(404).json({ msg: `Week ${weekNumber} not found.` });
+    }
+
+    const initialDayCount = week.days.length;
+    week.days = week.days.filter(d => d.dayNumber !== Number(dayNumber));
+
+    if (week.days.length === initialDayCount) {
+      return res.status(404).json({ msg: `Day ${dayNumber} not found in Week ${weekNumber}.` });
+    }
+
+    await course.save();
+    res.json({ msg: `Day ${dayNumber} removed from Week ${weekNumber} successfully.` });
+  } catch (err) {
+    console.error('Error deleting day from week:', err.message);
     res.status(500).send('Server Error');
   }
 });

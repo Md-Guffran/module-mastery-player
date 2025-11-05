@@ -6,7 +6,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { ResourcesSection } from '@/components/ResourcesSection';
 import { ProgressBar } from '@/components/ProgressBar';
 import { useCourseProgress } from '@/hooks/useCourseProgress';
-import { Module, Lesson } from '@/types/course';
+import { Course, Module, Lesson, Week, Day } from '@/types/course'; // Import Course, Week, Day
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -29,15 +29,15 @@ import { formatDurationMMSS } from '@/utils/duration';
 
 const CoursePlayer = () => {
   const { courseId, moduleId, videoId } = useParams<{ courseId: string; moduleId?: string; videoId?: string }>();
-  const [modules, setModules] = useState<Module[]>([]);
+  const [course, setCourse] = useState<Course | null>(null); // Store the entire course object
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/course/courses/${courseId}`);
-        setModules(res.data.modules);
+        const res = await axios.get<Course>(`${API_BASE_URL}/api/course/courses/${courseId}`);
+        setCourse(res.data); // Set the entire course data
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch course data:', err);
@@ -58,45 +58,61 @@ const CoursePlayer = () => {
   const { progress, updateProgress, getProgress, getTotalProgress } = useCourseProgress();
 
   useEffect(() => {
-    if (modules.length > 0) {
+    if (course && course.weeks.length > 0) {
       let selectedVideo = null;
+      let foundModule: Module | undefined;
+
+      // Try to find the specific video if moduleId and videoId are provided
       if (moduleId && videoId) {
-        // Find the specific video if moduleId and videoId are provided
-        const targetModule = modules.find(m => (m._id || m.id) === moduleId);
-        if (targetModule) {
-          selectedVideo = targetModule.videos.find(v => (v._id || v.id) === videoId);
+        for (const week of course.weeks) {
+          for (const day of week.days) {
+            foundModule = day.modules.find(m => (m._id || m.id) === moduleId);
+            if (foundModule) {
+              selectedVideo = foundModule.videos.find(v => (v._id || v.id) === videoId);
+              if (selectedVideo) break;
+            }
+          }
+          if (selectedVideo) break;
         }
       }
 
-      // If no specific video found or provided, default to the first video of the first module
-      if (!selectedVideo && modules[0].videos.length > 0) {
-        selectedVideo = modules[0].videos[0];
+      // If no specific video found or provided, default to the first video of the first module of the first day of the first week
+      if (!selectedVideo && course.weeks[0]?.days[0]?.modules[0]?.videos[0]) {
+        selectedVideo = course.weeks[0].days[0].modules[0].videos[0];
       }
 
       if (selectedVideo && !currentLesson) {
         setCurrentLesson({
           id: selectedVideo._id,
           title: selectedVideo.title,
-          description: '', // Description is not in video schema, can be added if needed
+          description: '',
           videoUrl: selectedVideo.url,
-          duration: selectedVideo.duration || 0, // Use actual duration if available
+          duration: selectedVideo.duration || 0,
           resources: selectedVideo.resourcesUrl ? [{ title: 'Resources', url: selectedVideo.resourcesUrl }] : [],
           notes: selectedVideo.notesUrl ? [{ title: 'Notes', url: selectedVideo.notesUrl }] : [],
         });
       }
     }
-  }, [modules, currentLesson, moduleId, videoId]);
+  }, [course, currentLesson, moduleId, videoId]);
 
 
-  const allLessons = modules.flatMap(m => m.videos.map(video => ({
-    id: video._id,
-    title: video.title,
-    description: '',
-    videoUrl: video.url,
-    duration: video.duration || 0,
-    resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
-    notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
-  })));
+  const allLessons = course
+    ? course.weeks.flatMap(week =>
+        week.days.flatMap(day =>
+          day.modules.flatMap(module =>
+            module.videos.map(video => ({
+              id: video._id,
+              title: video.title,
+              description: '',
+              videoUrl: video.url,
+              duration: video.duration || 0,
+              resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
+              notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
+            }))
+          )
+        )
+      )
+    : [];
 
   const currentLessonIndex = currentLesson ? allLessons.findIndex(l => l.id === currentLesson.id) : -1;
   const nextLesson = currentLessonIndex !== -1 ? allLessons[currentLessonIndex + 1] : null;
@@ -120,7 +136,7 @@ const CoursePlayer = () => {
     return (
       <>
         <Header />
-        <div className="flex justify-center items-center h-screen">Loading modules...</div>
+        <div className="flex justify-center items-center h-screen">Loading course...</div>
       </>
     );
   }
@@ -134,11 +150,11 @@ const CoursePlayer = () => {
     );
   }
 
-  if (!currentLesson) {
+  if (!course || !currentLesson) {
     return (
       <>
         <Header />
-        <div className="flex justify-center items-center h-screen">No lessons available.</div>
+        <div className="flex justify-center items-center h-screen">No course or lessons available.</div>
       </>
     );
   }
@@ -148,18 +164,7 @@ const CoursePlayer = () => {
       <Header />
       <div className="flex h-screen bg-background overflow-hidden pt-16">
       <CourseSidebar
-        modules={modules.map(m => ({
-          ...m,
-          lessons: m.videos.map(video => ({
-            id: video._id,
-            title: video.title,
-            description: '',
-            videoUrl: video.url,
-            duration: video.duration || 0,
-            resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
-            notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
-          }))
-        }))}
+        course={course} // Pass the entire course object
         currentLessonId={currentLesson.id}
         progress={progress}
         onLessonSelect={handleLessonSelect}
