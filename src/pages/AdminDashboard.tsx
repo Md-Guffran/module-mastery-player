@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Import axios
 import api from '../api';
 import { Module, Video, UserProgress, Course, Week, Day } from '../types/course'; // Assuming Course type exists or will be defined
 import { Input } from '../components/ui/input';
@@ -51,9 +52,13 @@ const AdminDashboard: React.FC = () => {
   const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0 }] });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
+  const [editedDayAssessment, setEditedDayAssessment] = useState<string>(''); // State for editing day assessment title
+  const [editedDayAssessmentLink, setEditedDayAssessmentLink] = useState<string>(''); // State for editing day assessment link
   const [users, setUsers] = useState<User[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [newDayAssessment, setNewDayAssessment] = useState<string>(''); // New state for day assessment title
+  const [newDayAssessmentLink, setNewDayAssessmentLink] = useState<string>(''); // New state for day assessment link
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
@@ -215,11 +220,30 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // Ensure day exists, create if it doesn't
-      const dayExists = await ensureDayExists(selectedCourseIdForModules, selectedWeek, selectedDay);
+      // Ensure day exists, create if it doesn't (with assessment data if provided)
+      const dayExists = await ensureDayExists(
+        selectedCourseIdForModules, 
+        selectedWeek, 
+        selectedDay,
+        newDayAssessment.trim() || undefined,
+        newDayAssessmentLink.trim() || undefined
+      );
       if (!dayExists) {
         alert('Failed to create or find day.');
         return;
+      }
+
+      // If day exists but assessment fields are provided and not empty, update the day
+      if (newDayAssessment.trim() || newDayAssessmentLink.trim()) {
+        try {
+          await api.put(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${selectedWeek}/days/${selectedDay}`, {
+            assessment: newDayAssessment.trim() || '',
+            assessmentLink: newDayAssessmentLink.trim() || '',
+          });
+        } catch (updateErr) {
+          console.error('Failed to update day assessment:', updateErr);
+          // Continue anyway - not critical
+        }
       }
 
       // Convert minutes to seconds before sending
@@ -238,6 +262,9 @@ const AdminDashboard: React.FC = () => {
       );
       alert('Module created successfully');
       setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0 }] }); // Reset form
+      // Reset assessment fields
+      setNewDayAssessment('');
+      setNewDayAssessmentLink('');
       // Keep week and day selected for next module
       fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
     } catch (err) {
@@ -257,6 +284,14 @@ const AdminDashboard: React.FC = () => {
         notesUrl: video.notesUrl || '',
       }))
     });
+
+    // Find the corresponding day to get assessment details
+    const course = courses.find(c => c._id === selectedCourseIdForModules);
+    const week = course?.weeks.find(w => w.weekNumber === weekNumber);
+    const day = week?.days.find(d => d.dayNumber === dayNumber);
+
+    setEditedDayAssessment(day?.assessment || '');
+    setEditedDayAssessmentLink(day?.assessmentLink || '');
   };
 
   const handleEditedModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -298,7 +333,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleUpdateModule = async () => {
-    if (editedModule && editedModule._id) {
+    if (editedModule && editedModule._id && selectedCourseIdForModules && selectedWeek !== null && selectedDay !== null) {
       // Validate that all videos have valid duration (not zero)
       const invalidVideos = editedModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
       if (invalidVideos.length > 0) {
@@ -316,17 +351,26 @@ const AdminDashboard: React.FC = () => {
           }))
         };
         
-        // Assuming PUT /api/admin/modules/:moduleId updates a module
-        const res = await api.put<Module>(`/api/admin/modules/${editedModule._id}`, moduleToUpdate);
-        alert('Module updated successfully');
+        // Update the module
+        await api.put<Module>(`/api/admin/modules/${editedModule._id}`, moduleToUpdate);
+
+        // Update the day's assessment fields
+        await api.put(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${selectedWeek}/days/${selectedDay}`, {
+          assessment: editedDayAssessment,
+          assessmentLink: editedDayAssessmentLink,
+        });
+
+        alert('Module and Day updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
+        setEditedDayAssessment('');
+        setEditedDayAssessmentLink('');
         if (selectedCourseIdForModules) {
           fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
         }
       } catch (err) {
-        console.error('Failed to update module:', err);
-        alert('Failed to update module');
+        console.error('Failed to update module or day:', err);
+        alert('Failed to update module or day');
       }
     }
   };
@@ -358,9 +402,9 @@ const AdminDashboard: React.FC = () => {
       if (!weekExists) {
         try {
           await api.post(`/api/admin/courses/${courseId}/weeks`, { weekNumber });
-        } catch (error: any) {
+        } catch (error) {
           // If week already exists (400 error), that's fine
-          if (error?.response?.status === 400) {
+          if (axios.isAxiosError(error) && error.response?.status === 400) {
             return true;
           }
           throw error;
@@ -374,7 +418,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Helper function to ensure day exists, create if it doesn't
-  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number): Promise<boolean> => {
+  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number, assessment?: string, assessmentLink?: string): Promise<boolean> => {
     try {
       // First ensure week exists
       const weekOk = await ensureWeekExists(courseId, weekNumber);
@@ -393,10 +437,10 @@ const AdminDashboard: React.FC = () => {
       const dayExists = week.days.some(d => d.dayNumber === dayNumber);
       if (!dayExists) {
         try {
-          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber });
-        } catch (error: any) {
+          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber, assessment, assessmentLink });
+        } catch (error) {
           // If day already exists (400 error), that's fine
-          if (error?.response?.status === 400) {
+          if (axios.isAxiosError(error) && error.response?.status === 400) {
             return true;
           }
           throw error;
@@ -453,14 +497,15 @@ const AdminDashboard: React.FC = () => {
       const newCourseReset = { title: '', description: '', weeks: [], skills: '', tools: '', level: 'beginner' as const, duration: '0', _id: '' };
       if (response && response._id) {
         newCourseReset._id = response._id;
+        // Set the newly created course as the selected one for module management
+        setSelectedCourseIdForModules(response._id);
+        // Reset new day assessment fields
+        setNewDayAssessment('');
+        setNewDayAssessmentLink('');
       }
       setNewCourse(newCourseReset); // Reset form
       fetchCourses(); // Refresh the list of courses
       setViewMode('modules'); // Navigate to module management view
-      // Optionally, set the newly created course as the selected one for module management
-      if (response && response._id) {
-        setSelectedCourseIdForModules(response._id);
-      }
     } catch (err) {
       console.error('Failed to create course:', err);
       alert('Failed to create course');
@@ -764,6 +809,29 @@ const AdminDashboard: React.FC = () => {
                                         <Button type="button" onClick={addEditedVideoField} className="mr-2">
                                           <PlusCircle className="w-4 h-4 mr-2" /> Add Video
                                         </Button>
+
+                                        <h3 className="text-md font-semibold mt-6 mb-2">Day Assessment</h3>
+                                        <div>
+                                          <Label htmlFor="editedDayAssessment">Assessment Title (Optional)</Label>
+                                          <Input
+                                            id="editedDayAssessment"
+                                            type="text"
+                                            value={editedDayAssessment}
+                                            onChange={(e) => setEditedDayAssessment(e.target.value)}
+                                            placeholder="e.g., Week 1 Day 1 Quiz"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label htmlFor="editedDayAssessmentLink">Assessment Link (Optional)</Label>
+                                          <Input
+                                            id="editedDayAssessmentLink"
+                                            type="url"
+                                            value={editedDayAssessmentLink}
+                                            onChange={(e) => setEditedDayAssessmentLink(e.target.value)}
+                                            placeholder="e.g., https://forms.gle/..."
+                                          />
+                                        </div>
+
                                         <Button onClick={handleUpdateModule} className="mr-2">
                                           <Save className="w-4 h-4 mr-2" /> Save Changes
                                         </Button>
@@ -837,6 +905,26 @@ const AdminDashboard: React.FC = () => {
                       onChange={(e) => setSelectedDay(Number(e.target.value) || null)}
                       min="1"
                       required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dayAssessment">Assessment Title (Optional)</Label>
+                    <Input
+                      id="dayAssessment"
+                      type="text"
+                      value={newDayAssessment}
+                      onChange={(e) => setNewDayAssessment(e.target.value)}
+                      placeholder="e.g., Week 1 Day 1 Quiz"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dayAssessmentLink">Assessment Link (Optional)</Label>
+                    <Input
+                      id="dayAssessmentLink"
+                      type="url"
+                      value={newDayAssessmentLink}
+                      onChange={(e) => setNewDayAssessmentLink(e.target.value)}
+                      placeholder="e.g., https://forms.gle/..."
                     />
                   </div>
 

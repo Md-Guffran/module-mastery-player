@@ -22,8 +22,28 @@ export interface Module {
 }
 
 export interface Day {
+  _id?: string; // Add _id to Day interface
   dayNumber: number;
   modules: Module[];
+  assessment?: string;
+  assessmentLink?: string;
+}
+
+export interface UserAssessmentProgress {
+  _id: string;
+  userId: string;
+  courseId: string;
+  dayId: string;
+  assessmentTitle: string;
+  assessmentLink: string;
+  submittedLink: string;
+  status: 'pending' | 'submitted' | 'waiting for review' | 'completed' | 'failed';
+  submissionDate?: Date;
+  reviewDate?: Date;
+  reviewerId?: string;
+  feedback?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Week {
@@ -43,7 +63,7 @@ export interface Video {
 
 export interface Course {
   _id: string;
-  id?: any;
+  id?: string;
   title: string;
   description: string;
   weeks: Week[]; // Changed from modules to weeks

@@ -123,6 +123,30 @@ export const CourseSidebar = ({
                       </div>
                     </div>
                   ))}
+                  {day.assessment && (
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'w-full justify-start gap-3 h-auto py-3 px-3 transition-all',
+                        // Add styling for current assessment if needed
+                      )}
+                      onClick={() => {
+                        // Handle assessment click, e.g., navigate to assessment tab or link
+                        if (day.assessmentLink) {
+                          window.open(day.assessmentLink, '_blank');
+                        }
+                      }}
+                    >
+                      <div className="shrink-0">
+                        <Circle className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-sm leading-tight">
+                          Assessment: {day.assessment}
+                        </div>
+                      </div>
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>

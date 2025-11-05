@@ -44,9 +44,13 @@ const Index = () => {
     return userProgress.some(progress =>
       courses.some(course =>
         course._id === courseId &&
-        course.modules.some(module =>
-          module.videos.some(video =>
-            (video._id || video.id) === progress.lessonId
+        course.weeks.some(week => // Changed from modules to weeks
+          week.days.some(day => // Added days
+            day.modules.some(module =>
+              module.videos.some(video =>
+                (video._id || video.id) === progress.lessonId
+              )
+            )
           )
         )
       )
@@ -81,7 +85,7 @@ const Index = () => {
 
     const fetchCourses = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/course`);
+        const res = await axios.get(`${API_BASE_URL}/api/courses`);
         setCourses(res.data);
         setLoading(false);
       } catch (err) {

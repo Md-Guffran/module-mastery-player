@@ -18,15 +18,42 @@ const CourseProgressDisplay: React.FC<CourseProgressDisplayProps> = ({ courseId,
   let totalVideos = 0;
   let completedVideos = 0;
 
-  course.modules.forEach(module => {
-    module.videos.forEach(video => {
-      totalVideos++;
-      const progress = userProgress.find(p => (p.lessonId === video._id || p.lessonId === video.id) && p.completed);
-      if (progress) {
-        completedVideos++;
+  // Handle both old structure (modules) and new structure (weeks.days.modules)
+  if (course.modules && Array.isArray(course.modules)) {
+    // Old structure: course.modules
+    course.modules.forEach(module => {
+      if (module.videos && Array.isArray(module.videos)) {
+        module.videos.forEach(video => {
+          totalVideos++;
+          const progress = userProgress.find(p => (p.lessonId === video._id || p.lessonId === video.id) && p.completed);
+          if (progress) {
+            completedVideos++;
+          }
+        });
       }
     });
-  });
+  } else if (course.weeks && Array.isArray(course.weeks)) {
+    // New structure: course.weeks.days.modules
+    course.weeks.forEach(week => {
+      if (week.days && Array.isArray(week.days)) {
+        week.days.forEach(day => {
+          if (day.modules && Array.isArray(day.modules)) {
+            day.modules.forEach(module => {
+              if (module.videos && Array.isArray(module.videos)) {
+                module.videos.forEach(video => {
+                  totalVideos++;
+                  const progress = userProgress.find(p => (p.lessonId === video._id || p.lessonId === video.id) && p.completed);
+                  if (progress) {
+                    completedVideos++;
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+  }
 
   const progressPercentage = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
 

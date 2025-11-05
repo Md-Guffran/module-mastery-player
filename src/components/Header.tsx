@@ -91,8 +91,8 @@ const Header: React.FC = () => {
                 Learn <ChevronDown className="ml-1 h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem>Courses</DropdownMenuItem>
-                <DropdownMenuItem>Assessments</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/')}>Courses</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/assessments')}>Assessments</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Link to="/certification" className="hover:text-primary transition-colors">

@@ -19,11 +19,19 @@ const MyCourses: React.FC = () => {
     return userProgress.some(progress =>
       courses.some(course =>
         course._id === courseId &&
-        course.modules.some(module =>
-          module.videos.some(video =>
+        (course.weeks?.some(week => 
+          week.days?.some(day => 
+            day.modules?.some(module =>
+              module.videos?.some(video =>
+                (video._id || video.id) === progress.lessonId
+              )
+            )
+          )
+        ) || course.modules?.some(module =>
+          module.videos?.some(video =>
             (video._id || video.id) === progress.lessonId
           )
-        )
+        ))
       )
     );
   };

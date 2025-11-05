@@ -315,7 +315,7 @@ router.post('/courses/:courseId/weeks', auth, isAdmin, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber } = req.params;
-    const { dayNumber } = req.body;
+    const { dayNumber, assessment, assessmentLink } = req.body;
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -331,7 +331,7 @@ router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (r
       return res.status(400).json({ msg: `Day ${dayNumber} already exists in Week ${weekNumber}.` });
     }
 
-    week.days.push({ dayNumber, modules: [] });
+    week.days.push({ dayNumber, modules: [], assessment, assessmentLink });
     await course.save();
 
     const updatedCourse = await Course.findById(courseId).populate({
@@ -368,6 +368,49 @@ router.delete('/courses/:courseId/weeks/:weekNumber', auth, isAdmin, async (req,
     res.json({ msg: `Week ${weekNumber} removed successfully.` });
   } catch (err) {
     console.error('Error deleting week from course:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT api/admin/courses/:courseId/weeks/:weekNumber/days/:dayNumber
+// @desc    Update a day in a specific week of a course (including assessment fields)
+// @access  Admin
+router.put('/courses/:courseId/weeks/:weekNumber/days/:dayNumber', auth, isAdmin, async (req, res) => {
+  try {
+    const { courseId, weekNumber, dayNumber } = req.params;
+    const { assessment, assessmentLink } = req.body;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
+    }
+
+    const week = course.weeks.find(w => w.weekNumber === Number(weekNumber));
+    if (!week) {
+      return res.status(404).json({ msg: `Week ${weekNumber} not found.` });
+    }
+
+    const day = week.days.find(d => d.dayNumber === Number(dayNumber));
+    if (!day) {
+      return res.status(404).json({ msg: `Day ${dayNumber} not found in Week ${weekNumber}.` });
+    }
+
+    if (assessment !== undefined) {
+      day.assessment = assessment;
+    }
+    if (assessmentLink !== undefined) {
+      day.assessmentLink = assessmentLink;
+    }
+
+    await course.save();
+
+    const updatedCourse = await Course.findById(courseId).populate({
+      path: 'weeks.days.modules',
+      model: 'Module'
+    });
+    res.json(updatedCourse);
+  } catch (err) {
+    console.error('Error updating day in week:', err.message);
     res.status(500).send('Server Error');
   }
 });

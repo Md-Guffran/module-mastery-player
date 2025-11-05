@@ -17,6 +17,7 @@ import MyCourses from "./pages/MyCourses"; // Import MyCourses
 import AccountDetails from "./pages/AccountDetails"; // Import AccountDetails
 import AccountSettings from "./pages/AccountSettings"; // Import AccountSettings
 import SearchPage from "./pages/SearchPage"; // Import SearchPage
+import Assessments from "./pages/Assessments"; // Import Assessments
 // import CoursesPage from "./pages/Courses"; // Removed as Index.tsx now handles course listing
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/course-player/:courseId/:moduleId/:videoId" element={<PrivateRoute><CoursePlayer /></PrivateRoute>} />
           <Route path="/course/:courseId" element={<PrivateRoute><CourseDescription /></PrivateRoute>} />
           <Route path="/my-courses" element={<PrivateRoute><MyCourses /></PrivateRoute>} />
+          <Route path="/assessments" element={<PrivateRoute><Assessments /></PrivateRoute>} />
           <Route path="/account-details" element={<PrivateRoute><AccountDetails /></PrivateRoute>} />
           <Route path="/account-settings" element={<PrivateRoute><AccountSettings /></PrivateRoute>} />
           <Route path="/search" element={<SearchPage />} />

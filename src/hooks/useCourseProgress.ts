@@ -9,7 +9,9 @@ export const useCourseProgress = () => {
     const fetchProgress = async () => {
       try {
         const res = await api.get<UserProgressResponse[]>('/api/progress');
-        const progressData = res.data.reduce((acc: Record<string, CourseProgress>, p: UserProgressResponse) => {
+        // Handle both array response and response with data property
+        const progressArray = Array.isArray(res) ? res : (res as any)?.data || [];
+        const progressData = progressArray.reduce((acc: Record<string, CourseProgress>, p: UserProgressResponse) => {
           acc[p.lessonId] = {
             lessonId: p.lessonId,
             lessonTitle: p.lessonTitle,

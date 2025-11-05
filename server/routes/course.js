@@ -47,10 +47,10 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// @route   GET api/course/courses/:id
+// @route   GET api/courses/:id
 // @desc    Get a single course by ID with its full content structure
 // @access  Public
-router.get('/courses/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const course = await Course.findById(req.params.id).populate({
       path: 'weeks.days.modules',

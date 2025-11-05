@@ -28,6 +28,14 @@ const CourseSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Module',
       }],
+      assessment: {
+        type: String,
+        default: '',
+      },
+      assessmentLink: {
+        type: String,
+        default: '',
+      },
     }],
   }],
   skills: {

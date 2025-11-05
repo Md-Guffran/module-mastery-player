@@ -25,7 +25,7 @@ const CourseDescription: React.FC = () => {
     const fetchCourseAndProgress = async () => {
       if (courseId) {
         try {
-          const courseResponse = await api.get<Course>(`/api/course/courses/${courseId}`);
+          const courseResponse = await api.get<Course>(`/api/courses/${courseId}`);
           setCourse(courseResponse);
 
           let progressResponse: UserProgress[] = [];
@@ -198,6 +198,20 @@ const CourseDescription: React.FC = () => {
                                 ))
                               ) : (
                                 <p className="p-4 text-sm text-muted-foreground">No modules for this day.</p>
+                              )}
+                              {(day.assessment && day.assessment.trim()) && (
+                                <div className="flex items-center justify-between py-2 pl-8 pr-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
+                                  <div className="flex items-center">
+                                    <FileText className="h-4 w-4 mr-2 text-secondary-foreground" />
+                                    {day.assessmentLink && day.assessmentLink.trim() ? (
+                                      <a href={day.assessmentLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm text-blue-500">
+                                        <span>Assessment: {day.assessment}</span>
+                                      </a>
+                                    ) : (
+                                      <span className="text-sm">Assessment: {day.assessment}</span>
+                                    )}
+                                  </div>
+                                </div>
                               )}
                             </AccordionContent>
                           </AccordionItem>

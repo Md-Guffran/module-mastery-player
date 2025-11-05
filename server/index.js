@@ -32,9 +32,10 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/courses', require('./routes/course'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/course', require('./routes/course'));
 app.use('/api/progress', require('./routes/progress'));
+app.use('/api/assessments', require('./routes/assessment'));
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
