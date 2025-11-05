@@ -28,7 +28,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   const totalMinutes = lessonDuration / 60;
 
   return (
-    <Card className="relative text-foreground">
+    <Card className="relative text-foreground rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow">
       <CardContent className="p-4 text-foreground">
         <div className="flex items-center justify-between">
           <div>
@@ -78,4 +78,3 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
     </Card>
   );
 };
-

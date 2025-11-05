@@ -13,6 +13,10 @@ import UserDashboard from "./pages/UserDashboard"; // Import UserDashboard
 import PrivateRoute from "./components/PrivateRoute";
 import CoursePlayer from "./pages/CoursePlayer"; // Import CoursePlayer
 import CourseDescription from "./pages/CourseDescription";
+import MyCourses from "./pages/MyCourses"; // Import MyCourses
+import AccountDetails from "./pages/AccountDetails"; // Import AccountDetails
+import AccountSettings from "./pages/AccountSettings"; // Import AccountSettings
+import SearchPage from "./pages/SearchPage"; // Import SearchPage
 // import CoursesPage from "./pages/Courses"; // Removed as Index.tsx now handles course listing
 
 const queryClient = new QueryClient();
@@ -50,6 +54,10 @@ const App = () => (
           {/* Route for the Course Player page */}
           <Route path="/course-player/:courseId/:moduleId/:videoId" element={<PrivateRoute><CoursePlayer /></PrivateRoute>} />
           <Route path="/course/:courseId" element={<PrivateRoute><CourseDescription /></PrivateRoute>} />
+          <Route path="/my-courses" element={<PrivateRoute><MyCourses /></PrivateRoute>} />
+          <Route path="/account-details" element={<PrivateRoute><AccountDetails /></PrivateRoute>} />
+          <Route path="/account-settings" element={<PrivateRoute><AccountSettings /></PrivateRoute>} />
+          <Route path="/search" element={<SearchPage />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

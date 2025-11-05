@@ -72,6 +72,7 @@ export default {
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
         glow: "var(--shadow-glow)",
+        "hover-lift": "var(--shadow-hover-lift)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -125,6 +126,16 @@ export default {
             opacity: "1",
           },
         },
+        "hover-glow": {
+          "0%": {
+            transform: "scale(1)",
+            boxShadow: "var(--shadow-md)",
+          },
+          "100%": {
+            transform: "scale(1.02)",
+            boxShadow: "var(--shadow-glow)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -132,6 +143,7 @@ export default {
         "slide-in": "slide-in 0.3s ease-out",
         "fade-in": "fade-in 0.4s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
+        "hover-glow": "hover-glow 0.3s ease-out forwards",
       },
     },
   },

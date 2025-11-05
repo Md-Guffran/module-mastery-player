@@ -172,8 +172,8 @@ const CoursePlayer = () => {
           percentage={totalProgressPercentage}
         />
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-6xl mx-auto space-y-6 bg-card p-6 rounded-lg shadow-lg">
             <motion.div
               key={currentLesson.id}
               initial={{ opacity: 0, y: 20 }}
@@ -215,7 +215,7 @@ const CoursePlayer = () => {
                     <Button
                       onClick={handleNextLesson}
                       disabled={!isNextLessonUnlocked}
-                      className="gap-2"
+                      className="gap-2 rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow"
                       size="lg"
                     >
                       {isNextLessonUnlocked ? (

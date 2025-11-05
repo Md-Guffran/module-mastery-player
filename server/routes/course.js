@@ -16,25 +16,46 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET api/course/:courseTitle
-// @desc    Get a single course and its modules by title
+// @route   GET api/course/search
+// @desc    Search courses by title or description
 // @access  Public
-router.get('/:courseTitle', async (req, res) => {
+// NOTE: This route must be defined BEFORE /:courseTitle route to avoid route conflicts
+router.get('/search', async (req, res) => {
   try {
-    const course = await Course.findOne({ title: req.params.courseTitle }).populate('modules');
-
-    if (!course) {
-      return res.status(404).json({ msg: 'Course not found' });
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ msg: 'Query parameter "query" is required' });
     }
-    res.json(course); // Return the entire course object, including modules
+
+    const courses = await Course.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+      ],
+    }).populate('modules');
+
+    res.json(courses);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
 
+// @route   GET api/course/modules
+// @desc    Get all modules
+// @access  Public
+// NOTE: This route must be defined BEFORE /:courseTitle route to avoid route conflicts
+router.get('/modules', async (req, res) => {
+  try {
+    const modules = await Module.find().populate('videos');
+    res.json(modules);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
-// @route   GET api/course/:id
+// @route   GET api/course/courses/:id
 // @desc    Get a single course by ID and its modules
 // @access  Public
 router.get('/courses/:id', async (req, res) => {
@@ -54,37 +75,18 @@ router.get('/courses/:id', async (req, res) => {
   }
 });
 
-// @route   GET api/modules
-// @desc    Get all modules
+// @route   GET api/course/:courseTitle
+// @desc    Get a single course and its modules by title
 // @access  Public
-router.get('/modules', async (req, res) => {
+// NOTE: This route should be defined LAST to avoid matching specific routes like /search or /modules
+router.get('/:courseTitle', async (req, res) => {
   try {
-    const modules = await Module.find().populate('videos');
-    res.json(modules);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+    const course = await Course.findOne({ title: req.params.courseTitle }).populate('modules');
 
-// @route   GET api/course/search
-// @desc    Search courses by title or description
-// @access  Public
-router.get('/search', async (req, res) => {
-  try {
-    const { q } = req.query;
-    if (!q) {
-      return res.status(400).json({ msg: 'Query parameter "q" is required' });
+    if (!course) {
+      return res.status(404).json({ msg: 'Course not found' });
     }
-
-    const courses = await Course.find({
-      $or: [
-        { title: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-      ],
-    }).populate('modules');
-
-    res.json(courses);
+    res.json(course); // Return the entire course object, including modules
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

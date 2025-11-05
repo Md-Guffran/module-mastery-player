@@ -108,7 +108,7 @@ const CourseDescription: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="container mx-auto p-8 pt-24">
+      <div className="container mx-auto p-8 pt-24 bg-background rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
       <p className="text-lg mb-4">{course.description}</p>
       <p className="text-sm mb-2">Skills: {course.skills}</p>
@@ -143,15 +143,15 @@ const CourseDescription: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4">Course content</h2>
         <Accordion type="multiple" className="w-full">
           {course.modules.map((module, moduleIndex) => (
-            <AccordionItem key={module._id || module.id || moduleIndex} value={`item-${moduleIndex}`}>
-              <AccordionTrigger className="text-lg font-semibold">
+            <AccordionItem key={module._id || module.id || moduleIndex} value={`item-${moduleIndex}`} className="mb-2 rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:animate-hover-glow">
+              <AccordionTrigger className="text-lg font-semibold p-4">
                 {module.title}
               </AccordionTrigger>
               <AccordionContent>
                 {module.videos.map((video, videoIndex) => (
-                  <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-4 border-b last:border-b-0">
+                  <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-3 pl-6 pr-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
                     <div className="flex items-center">
-                      <PlayCircle className="h-5 w-5 mr-2 text-gray-500" />
+                      <PlayCircle className="h-5 w-5 mr-3 text-primary" />
                       <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline">
                         <span>{video.title}</span>
                       </Link>

@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home } from 'lucide-react';
+import { LogOut, Home, Search, ChevronDown, Globe } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import ThemeToggle from './ThemeToggle';
 import axios from 'axios';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Header: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Sync search term with URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get('query') || '';
+    setSearchTerm(query);
+  }, [location.search]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -19,12 +39,15 @@ const Header: React.FC = () => {
             headers: { 'x-auth-token': token },
           });
           setUserRole(res.data.role);
+          setUsername(res.data.username); // Assuming username is returned
         } catch (err) {
           console.error('Failed to fetch user data:', err);
           setUserRole(null);
+          setUsername(null);
         }
       } else {
         setUserRole(null);
+        setUsername(null);
       }
     };
 
@@ -52,35 +75,118 @@ const Header: React.FC = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {isAuthenticated && (
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/">
-                  <Home className="w-4 h-4 mr-2" /> Home
-                </Link>
-              </Button>
-            )}
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        {/* Left section: Logo and Navigation */}
+        <div className="flex items-center space-x-6">
+          <Link to="/" className="flex items-center space-x-2">
+            <img src="/placeholder.svg" alt="Mondee Logo" className="h-6" /> {/* Placeholder for logo */}
+            <span className="text-xl text-red-500 font-bold">Mondee</span>
+          </Link>
+          <nav className="hidden md:flex items-center space-x-4">
+            <Link to="/" className="hover:text-primary transition-colors flex items-center">
+              Home
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center hover:text-primary transition-colors">
+                Learn <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>Courses</DropdownMenuItem>
+                <DropdownMenuItem>Assessments</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link to="/certification" className="hover:text-primary transition-colors">
+              Certification
+            </Link>
+          </nav>
+        </div>
+
+        {/* Right section: Search, Dashboard, Language, User Profile */}
+        <div className="flex items-center space-x-4">
+          <div className="relative hidden md:block">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search courses..."
+              className="pl-8 w-[200px] rounded-full"
+              value={searchTerm}
+              onChange={(e) => {
+                const newSearchTerm = e.target.value;
+                setSearchTerm(newSearchTerm);
+                
+                // If on home page, update URL with search param
+                if (location.pathname === '/') {
+                  const params = new URLSearchParams();
+                  if (newSearchTerm.trim()) {
+                    params.set('query', newSearchTerm.trim());
+                    navigate(`/?${params.toString()}`, { replace: true });
+                  } else {
+                    navigate('/', { replace: true });
+                  }
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchTerm.trim()) {
+                  // If on home page, just update the URL (already handled in onChange)
+                  // Otherwise, navigate to search page
+                  if (location.pathname !== '/') {
+                    navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+                  }
+                }
+              }}
+            />
           </div>
-          <div className="flex items-center space-x-2">
-            {userRole === 'admin' && isAuthenticated && (
-              <Button asChild variant="default" size="sm">
-                <Link to="/admin">Admin Dashboard</Link>
-              </Button>
-            )}
-            {userRole !== 'admin' && isAuthenticated && (
-              <Button asChild variant="default" size="sm">
-                <Link to="/dashboard">My Progress Dashboard</Link>
-              </Button>
-            )}
-            {isAuthenticated && (
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                <LogOut className="w-4 h-4 mr-2" /> Logout
-              </Button>
-            )}
-            <ThemeToggle />
-          </div>
+          {isAuthenticated && userRole === 'admin' && (
+            <Button asChild variant="default" className="bg-purple-600 hover:bg-purple-700 text-white rounded-full hidden md:block">
+              <Link to="/admin">Admin Dashboard</Link>
+            </Button>
+          )}
+          {isAuthenticated && userRole !== 'admin' && (
+            <Button asChild variant="default" className="bg-purple-600 hover:bg-purple-700 text-white rounded-full hidden md:block">
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center hover:text-primary transition-colors">
+              <Globe className="h-4 w-4 mr-1" /> EN <ChevronDown className="ml-1 h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>English</DropdownMenuItem>
+              <DropdownMenuItem>Spanish</DropdownMenuItem>
+              <DropdownMenuItem>French</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center">
+                <Avatar className="h-8 w-8 border-2 border-primary">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {username ? username.charAt(0).toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/account-details')}>My Account</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/account-settings')}>Account Settings</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/my-courses')}>My Library</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild>
+              <Link to="/signin">Sign In</Link>
+            </Button>
+          )}
+          <ThemeToggle />
         </div>
       </div>
     </header>
@@ -88,4 +194,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-

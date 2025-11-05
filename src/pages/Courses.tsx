@@ -48,7 +48,7 @@ const CoursesPage: React.FC = () => {
         {courses.length > 0 ? (
           courses.map((course) => (
             <Link key={course.id} to={`/course-player/${course.id}`}>
-              <Card className="hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-pointer">
+              <Card className="rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow cursor-pointer">
                 <CardHeader>
                   <CardTitle>{course.title}</CardTitle>
                 </CardHeader>

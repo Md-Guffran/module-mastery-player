@@ -31,7 +31,7 @@ const CourseSearchBar: React.FC<CourseSearchBarProps> = ({ onCourseSelect, onSea
     setLoading(true);
     console.log('Loading set to true for query:', query);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/course/search?q=${query}`);
+      const res = await axios.get(`${API_BASE_URL}/api/course/search?query=${encodeURIComponent(query)}`);
       console.log('API response data:', res.data);
       setSuggestions(res.data);
       setShowSuggestions(true); // Show suggestions after data is fetched
@@ -119,6 +119,7 @@ const CourseSearchBar: React.FC<CourseSearchBarProps> = ({ onCourseSelect, onSea
         placeholder="Search for courses..."
         value={searchTerm}
         onChange={handleInputChange}
+        onFocus={() => setShowSuggestions(true)}
         className="pr-10"
       />
       {loading && (
@@ -129,11 +130,11 @@ const CourseSearchBar: React.FC<CourseSearchBarProps> = ({ onCourseSelect, onSea
           </svg>
         </div>
       )}
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && searchTerm.length > 0 && (
         <div className="absolute z-10 w-full bg-popover border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
           {loading ? (
             <div className="px-4 py-2 text-muted-foreground">Loading...</div>
-          ) : (
+          ) : suggestions.length > 0 ? (
             <ul className="p-0 m-0">
               {suggestions.map((course) => (
                 <li
@@ -147,6 +148,8 @@ const CourseSearchBar: React.FC<CourseSearchBarProps> = ({ onCourseSelect, onSea
                 </li>
               ))}
             </ul>
+          ) : (
+            <div className="px-4 py-2 text-muted-foreground">No courses found.</div>
           )}
         </div>
       )}

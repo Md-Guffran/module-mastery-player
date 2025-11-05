@@ -41,6 +41,12 @@ export interface Course {
   tools: string;
   level: 'beginner' | 'intermediate' | 'advanced';
   duration: string;
+  imageUrl?: string; // Add image URL for course card
+  isBestseller?: boolean; // Add bestseller flag
+  updatedDate?: string; // Add updated date
+  totalHours?: number; // Add total hours
+  features?: string[]; // Add features for bullet points
+  views?: number; // Add number of views
 }
 
 export interface CourseProgress {
