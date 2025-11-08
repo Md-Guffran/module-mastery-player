@@ -117,38 +117,24 @@ const CourseDescription: React.FC = () => {
       <Header />
       <div className="container mx-auto p-8 pt-24 bg-background rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-        <p className="text-lg mb-4">{course.description}</p>
+        <img src="/genAi.png" alt="Generative AI Development" className="w-full max-h-64 object-contain rounded-lg mb-6 mx-auto" />
+        <div className="text-lg mb-4">
+          {course.description.split('•').map((item, index) => (
+            item.trim() && (
+              index === 0 ? (
+                <p key={index} className="mb-2">{item.trim()}</p>
+              ) : (
+                <ul key={index} className="list-disc pl-5 space-y-1">
+                  <li>{item.trim()}</li>
+                </ul>
+              )
+            )
+          ))}
+        </div>
         <p className="text-sm mb-2">Skills: {course.skills}</p>
         <p className="text-sm mb-2">Tools: {course.tools}</p>
         <p className="text-sm mb-2">Level: {course.level}</p>
         <p className="text-sm mb-4">Duration: {course.duration}</p>
-        {(() => {
-          let linkToUse = resumeLink;
-
-          if (!linkToUse && course.weeks && course.weeks.length > 0) {
-            const firstWeek = course.weeks[0];
-            if (firstWeek.days && firstWeek.days.length > 0) {
-              const firstDay = firstWeek.days[0];
-              if (firstDay.modules && firstDay.modules.length > 0) {
-                const firstModule = firstDay.modules[0];
-                if (firstModule.videos && firstModule.videos.length > 0) {
-                  const firstVideo = firstModule.videos[0];
-                  const moduleId = firstModule._id || firstModule.id;
-                  const videoId = firstVideo._id || firstVideo.id;
-                  if (moduleId && videoId && courseId) {
-                    linkToUse = `/course-player/${courseId}/${moduleId}/${videoId}`;
-                  }
-                }
-              }
-            }
-          }
-
-          return linkToUse ? (
-            <Link to={linkToUse}>
-              <Button className="mb-4">{hasStartedCourse ? 'Resume Course' : 'Start Course'}</Button>
-            </Link>
-          ) : null;
-        })()}
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Course content</h2>
           <Accordion type="multiple" className="w-full">

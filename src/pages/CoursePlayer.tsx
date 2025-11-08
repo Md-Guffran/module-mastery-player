@@ -10,13 +10,15 @@ import { Course, Module, Lesson, Week, Day, UserAssessmentProgress } from '@/typ
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ChevronRight, CheckCircle, XCircle, Clock, Send } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'; // Import Sheet components
+import { ChevronRight, CheckCircle, XCircle, Clock, Send, Menu } from 'lucide-react'; // Import Menu icon
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '@/config';
 import Header from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile hook
 
 interface YouTubePlayer {
   getCurrentTime: () => number;
@@ -42,6 +44,8 @@ const CoursePlayer = () => {
   const [submittedLink, setSubmittedLink] = useState<string>('');
   const { toast: shadcnToast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile(); // Use the hook
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State for mobile sidebar
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -262,21 +266,37 @@ const CoursePlayer = () => {
 
   return (
     <>
-      <Header />
+      <Header onMenuClick={() => setIsSidebarOpen(true)} isMobile={isMobile} /> {/* Pass onMenuClick and isMobile */}
       <div className="flex h-screen bg-background overflow-hidden pt-16">
-      <CourseSidebar
-        course={course} // Pass the entire course object
-        currentLessonId={currentLesson.id}
-        progress={progress}
-        onLessonSelect={handleLessonSelect}
-      />
+        {isMobile ? (
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetContent side="left" className="p-0 w-80">
+              <CourseSidebar
+                course={course}
+                currentLessonId={currentLesson.id}
+                progress={progress}
+                onLessonSelect={(lesson) => {
+                  handleLessonSelect(lesson);
+                  setIsSidebarOpen(false); // Close sidebar on lesson select
+                }}
+              />
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <CourseSidebar
+            course={course}
+            currentLessonId={currentLesson.id}
+            progress={progress}
+            onLessonSelect={handleLessonSelect}
+          />
+        )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ProgressBar
-          completedLessons={completedLessons}
-          totalLessons={totalLessons}
-          percentage={totalProgressPercentage}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ProgressBar
+            completedLessons={completedLessons}
+            totalLessons={totalLessons}
+            percentage={totalProgressPercentage}
+          />
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-6xl mx-auto space-y-6 bg-card p-6 rounded-lg shadow-lg">

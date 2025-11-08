@@ -164,7 +164,7 @@ const Index = () => {
             {filteredCourses.map((course) => (
               <Link to={`/course/${course._id}`} key={course._id}>
                 <Card className="h-full flex flex-col rounded-lg shadow-md overflow-hidden group relative">
-                  <img src={course.imageUrl || "/placeholder.svg"} alt={course.title} className="w-full h-36 object-cover" />
+                  <img src={course.imageUrl || "../genAi.png"} alt={course.title} className="w-full h-36 object-cover" />
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-center mb-1">
                       <CardTitle className="text-lg font-bold">{course.title}</CardTitle>
@@ -180,7 +180,6 @@ const Index = () => {
                     <div className="flex items-center text-xs text-muted-foreground mb-2">
                       <span>{course.views || 0} views</span>
                     </div>
-                    <Button className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 h-auto">Add to cart</Button>
                   </CardContent>
 
                   {/* Hover Overlay */}
@@ -195,7 +194,6 @@ const Index = () => {
                     <p className="text-xs text-muted-foreground mb-4">
                       Duration: {course.duration}
                     </p>
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 h-auto">Add to cart</Button>
                   </div>
                 </Card>
               </Link>

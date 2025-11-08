@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Search, ChevronDown, Globe } from 'lucide-react';
+import { LogOut, Home, Search, ChevronDown, Globe, Menu } from 'lucide-react';
 import { API_BASE_URL } from '@/config';
 import ThemeToggle from './ThemeToggle';
 import axios from 'axios';
@@ -16,7 +16,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onMenuClick?: () => void;
+  isMobile?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -76,11 +81,15 @@ const Header: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Left section: Logo and Navigation */}
-        <div className="flex items-center space-x-6">
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/placeholder.svg" alt="Mondee Logo" className="h-6" /> {/* Placeholder for logo */}
-            <span className="text-xl text-red-500 font-bold">Mondee</span>
+        {/* Left section: Mobile Menu, Logo and Navigation */}
+        <div className="flex items-center space-x-4">
+          {isMobile && onMenuClick && (
+            <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden">
+              <Menu className="h-6 w-6" />
+            </Button>
+          )}
+          <Link to="/" className="flex items-center space-x-1 max-w-[120px] flex-shrink-0 overflow-hidden">
+            <img src="/font.png" alt="Company Name" className="h-6 ml-1 object-contain flex-shrink-0" />
           </Link>
           <nav className="hidden md:flex items-center space-x-4">
             <Link to="/" className="hover:text-primary transition-colors flex items-center">
@@ -102,7 +111,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Right section: Search, Dashboard, Language, User Profile */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <div className="relative hidden md:block">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -146,16 +155,11 @@ const Header: React.FC = () => {
               <Link to="/dashboard">Dashboard</Link>
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center hover:text-primary transition-colors">
-              <Globe className="h-4 w-4 mr-1" /> EN <ChevronDown className="ml-1 h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>English</DropdownMenuItem>
-              <DropdownMenuItem>Spanish</DropdownMenuItem>
-              <DropdownMenuItem>French</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAuthenticated && (
+            <Link to={userRole === 'admin' ? '/admin' : '/dashboard'} className="md:hidden hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <DropdownMenu>
