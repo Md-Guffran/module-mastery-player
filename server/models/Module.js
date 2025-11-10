@@ -5,6 +5,14 @@ const ModuleSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  concepts: {
+    type: String,
+    default: '',
+  },
+  exercises: {
+    type: String,
+    default: '',
+  },
   videos: [
     {
       title: {

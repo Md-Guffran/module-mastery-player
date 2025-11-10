@@ -49,12 +49,14 @@ const AdminDashboard: React.FC = () => {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [modules, setModules] = useState<Module[]>([]); // This will now represent modules within a selected course
   const [courses, setCourses] = useState<Course[]>([]); // State to hold all courses
-  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [] }], assessments: [] }); // Initialize with empty notesUrl array and assessments
+  const [newModule, setNewModule] = useState<Module>({ title: '', concepts: '', exercises: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [] }], assessments: [] }); // Initialize with empty notesUrl array and assessments
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [editingWeekNumber, setEditingWeekNumber] = useState<number | null>(null); // Store week number when editing
+  const [editingDayNumber, setEditingDayNumber] = useState<number | null>(null); // Store day number when editing
   const [newDayAssessment, setNewDayAssessment] = useState<string>(''); // State for new day assessment title
   const [newDayAssessmentLink, setNewDayAssessmentLink] = useState<string>(''); // State for new day assessment link
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
@@ -268,7 +270,7 @@ const AdminDashboard: React.FC = () => {
         moduleToSubmit
       );
       alert('Module created successfully');
-      setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [''] }], assessments: [{ title: '', link: '' }] }); // Reset form
+      setNewModule({ title: '', concepts: '', exercises: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [''] }], assessments: [{ title: '', link: '' }] }); // Reset form
       // Keep week and day selected for next module
       fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
     } catch (err) {
@@ -279,8 +281,12 @@ const AdminDashboard: React.FC = () => {
 
   const handleEditModule = (module: Module, weekNumber: number, dayNumber: number) => {
     setEditingModuleId(module._id || module.id || null);
+    setEditingWeekNumber(weekNumber); // Store week number for update
+    setEditingDayNumber(dayNumber); // Store day number for update
     setEditedModule({
       ...module,
+      concepts: module.concepts || '', // Ensure concepts is set
+      exercises: module.exercises || '', // Ensure exercises is set
       videos: module.videos.map(video => ({
         ...video,
         duration: video.duration ? secondsToMinutes(video.duration) : 0, // Convert seconds to minutes for display
@@ -345,7 +351,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleUpdateModule = async () => {
-    if (editedModule && editedModule._id && selectedCourseIdForModules && selectedWeek !== null && selectedDay !== null) {
+    if (editedModule && editedModule._id && selectedCourseIdForModules) {
       // Validate that all videos have valid duration (not zero)
       const invalidVideos = editedModule.videos.filter(video => !video.duration || Number(video.duration) <= 0);
       if (invalidVideos.length > 0) {
@@ -363,11 +369,16 @@ const AdminDashboard: React.FC = () => {
       try {
         // Convert minutes to seconds before sending
         const moduleToUpdate = {
-          ...editedModule,
+          title: editedModule.title,
+          concepts: editedModule.concepts || '',
+          exercises: editedModule.exercises || '',
           videos: editedModule.videos.map(video => ({
-            ...video,
-            duration: minutesToSeconds(Number(video.duration))
-          }))
+            title: video.title,
+            url: video.url,
+            duration: minutesToSeconds(Number(video.duration)),
+            notesUrl: video.notesUrl || []
+          })),
+          assessments: editedModule.assessments || []
         };
         
         // Update the module
@@ -376,6 +387,8 @@ const AdminDashboard: React.FC = () => {
         alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
+        setEditingWeekNumber(null);
+        setEditingDayNumber(null);
         if (selectedCourseIdForModules) {
           fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
         }
@@ -383,6 +396,8 @@ const AdminDashboard: React.FC = () => {
         console.error('Failed to update module:', err);
         alert('Failed to update module');
       }
+    } else {
+      alert('Please ensure module ID and course are selected.');
     }
   };
 
@@ -741,6 +756,38 @@ const AdminDashboard: React.FC = () => {
                                   <AccordionContent>
                                     {editingModuleId === (moduleItem._id || moduleItem.id) ? (
                                       <div className="space-y-4 p-2 sm:p-4">
+                                        <div>
+                                          <Label htmlFor="editedModuleConcepts">Concepts (Optional)</Label>
+                                          <textarea
+                                            id="editedModuleConcepts"
+                                            name="concepts"
+                                            value={editedModule?.concepts || ''}
+                                            onChange={(e) => setEditedModule(prevModule => prevModule ? { ...prevModule, concepts: e.target.value } : null)}
+                                            className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2
+                                             bg-white text-gray-900 placeholder-gray-500
+                                             border border-gray-300
+                                             focus:border-indigo-500 focus:ring-indigo-500
+                                             dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                                            rows={3}
+                                            placeholder="Enter concepts covered in this module"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label htmlFor="editedModuleExercises">Exercises (Optional)</Label>
+                                          <textarea
+                                            id="editedModuleExercises"
+                                            name="exercises"
+                                            value={editedModule?.exercises || ''}
+                                            onChange={(e) => setEditedModule(prevModule => prevModule ? { ...prevModule, exercises: e.target.value } : null)}
+                                            className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2
+                                             bg-white text-gray-900 placeholder-gray-500
+                                             border border-gray-300
+                                             focus:border-indigo-500 focus:ring-indigo-500
+                                             dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                                            rows={3}
+                                            placeholder="Enter exercises for this module"
+                                          />
+                                        </div>
                                         <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Videos</h3>
                                         {editedModule?.videos.map((video, index) => (
                                           <Card key={index} className="mb-4 p-3 sm:p-4 text-foreground">
@@ -854,10 +901,77 @@ const AdminDashboard: React.FC = () => {
                                           <Button type="button" onClick={addEditedVideoField} className="text-xs sm:text-sm">
                                             <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Video
                                           </Button>
+                                        </div>
+
+                                        <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Assessments</h3>
+                                        {editedModule?.assessments?.map((assessment, assessmentIndex) => (
+                                          <Card key={assessmentIndex} className="mb-4 p-3 sm:p-4 text-foreground">
+                                            <CardContent>
+                                              <div>
+                                                <Label htmlFor={`editedAssessmentTitle-${assessmentIndex}`}>Assessment Title</Label>
+                                                <Input
+                                                  id={`editedAssessmentTitle-${assessmentIndex}`}
+                                                  type="text"
+                                                  value={assessment.title}
+                                                  onChange={(e) => {
+                                                    if (editedModule) {
+                                                      const updatedAssessments = [...(editedModule.assessments || [])];
+                                                      updatedAssessments[assessmentIndex] = { ...updatedAssessments[assessmentIndex], title: e.target.value };
+                                                      setEditedModule({ ...editedModule, assessments: updatedAssessments });
+                                                    }
+                                                  }}
+                                                  required
+                                                />
+                                              </div>
+                                              <div className="mt-2">
+                                                <Label htmlFor={`editedAssessmentLink-${assessmentIndex}`}>Assessment Link</Label>
+                                                <Input
+                                                  id={`editedAssessmentLink-${assessmentIndex}`}
+                                                  type="url"
+                                                  value={assessment.link}
+                                                  onChange={(e) => {
+                                                    if (editedModule) {
+                                                      const updatedAssessments = [...(editedModule.assessments || [])];
+                                                      updatedAssessments[assessmentIndex] = { ...updatedAssessments[assessmentIndex], link: e.target.value };
+                                                      setEditedModule({ ...editedModule, assessments: updatedAssessments });
+                                                    }
+                                                  }}
+                                                  required
+                                                />
+                                              </div>
+                                              <Button
+                                                type="button"
+                                                variant="destructive"
+                                                onClick={() => {
+                                                  if (editedModule) {
+                                                    const updatedAssessments = (editedModule.assessments || []).filter((_, i) => i !== assessmentIndex);
+                                                    setEditedModule({ ...editedModule, assessments: updatedAssessments });
+                                                  }
+                                                }}
+                                                className="mt-4 text-xs sm:text-sm"
+                                              >
+                                                Remove Assessment
+                                              </Button>
+                                            </CardContent>
+                                          </Card>
+                                        ))}
+                                        <div className="flex flex-wrap gap-2">
+                                          <Button type="button" onClick={() => {
+                                            if (editedModule) {
+                                              setEditedModule({ ...editedModule, assessments: [...(editedModule.assessments || []), { title: '', link: '' }] });
+                                            }
+                                          }} className="text-xs sm:text-sm">
+                                            <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Assessment
+                                          </Button>
                                           <Button onClick={handleUpdateModule} className="text-xs sm:text-sm">
                                             <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Save Changes
                                           </Button>
-                                          <Button variant="outline" onClick={() => setEditingModuleId(null)} className="text-xs sm:text-sm">
+                                          <Button variant="outline" onClick={() => {
+                                            setEditingModuleId(null);
+                                            setEditedModule(null);
+                                            setEditingWeekNumber(null);
+                                            setEditingDayNumber(null);
+                                          }} className="text-xs sm:text-sm">
                                             Cancel
                                           </Button>
                                         </div>
@@ -930,7 +1044,38 @@ const AdminDashboard: React.FC = () => {
                       required
                     />
                   </div>
-
+                  <div>
+                    <Label htmlFor="moduleConcepts">Concepts (Optional)</Label>
+                    <textarea
+                      id="moduleConcepts"
+                      name="concepts"
+                      value={newModule.concepts || ''}
+                      onChange={(e) => setNewModule({ ...newModule, concepts: e.target.value })}
+                      className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2
+                       bg-white text-gray-900 placeholder-gray-500
+                       border border-gray-300
+                       focus:border-indigo-500 focus:ring-indigo-500
+                       dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                      rows={3}
+                      placeholder="Enter concepts covered in this module"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="moduleExercises">Exercises (Optional)</Label>
+                    <textarea
+                      id="moduleExercises"
+                      name="exercises"
+                      value={newModule.exercises || ''}
+                      onChange={(e) => setNewModule({ ...newModule, exercises: e.target.value })}
+                      className="mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2
+                       bg-white text-gray-900 placeholder-gray-500
+                       border border-gray-300
+                       focus:border-indigo-500 focus:ring-indigo-500
+                       dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                      rows={3}
+                      placeholder="Enter exercises for this module"
+                    />
+                  </div>
                   <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Videos</h3>
                   {newModule.videos.map((video, videoIndex) => (
                     <Card key={videoIndex} className="mb-4 p-3 sm:p-4 text-foreground">
@@ -990,7 +1135,15 @@ const AdminDashboard: React.FC = () => {
                                 size="icon"
                                 onClick={() => {
                                   const updatedNotes = (video.notesUrl || []).filter((_, i) => i !== noteIndex);
-                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } as unknown as EventTarget & HTMLInputElement });
+                                  setNewModule(prevModule => {
+                                    const updatedVideos = prevModule.videos.map((v, i) => {
+                                      if (i === videoIndex) {
+                                        return { ...v, notesUrl: updatedNotes };
+                                      }
+                                      return v;
+                                    });
+                                    return { ...prevModule, videos: updatedVideos };
+                                  });
                                 }}
                               >
                                 <MinusCircle className="w-4 h-4" />
@@ -1002,8 +1155,15 @@ const AdminDashboard: React.FC = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const updatedNotes = [...(video.notesUrl || []), ''];
-                              handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } as unknown as EventTarget & HTMLInputElement });
+                              setNewModule(prevModule => {
+                                const updatedVideos = prevModule.videos.map((v, i) => {
+                                  if (i === videoIndex) {
+                                    return { ...v, notesUrl: [...(v.notesUrl || []), ''] };
+                                  }
+                                  return v;
+                                });
+                                return { ...prevModule, videos: updatedVideos };
+                              });
                             }}
                           >
                             <PlusCircle className="w-4 h-4 mr-2" /> Add Note URL

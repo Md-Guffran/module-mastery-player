@@ -182,9 +182,43 @@ const CourseDescription: React.FC = () => {
                               </AccordionTrigger>
                               <AccordionContent>
                                 {day.modules && day.modules.length > 0 ? (
-                                  day.modules.map((module, moduleIndex) => (
-                                    <div key={module._id || module.id || moduleIndex} className="space-y-1 pl-4">
+                                  day.modules.map((module, moduleIndex) => {
+                                    // Debug: Log module data
+                                    console.log('Module data:', {
+                                      title: module.title,
+                                      concepts: module.concepts,
+                                      exercises: module.exercises,
+                                      hasConcepts: !!module.concepts,
+                                      hasExercises: !!module.exercises,
+                                      conceptsType: typeof module.concepts,
+                                      exercisesType: typeof module.exercises
+                                    });
+                                    
+                                    return (
+                                    <div key={module._id || module.id || moduleIndex} className="space-y-3 pl-4 mb-4">
                                       <h4 className="text-md font-medium text-muted-foreground">{module.title}</h4>
+                                      
+                                      {/* Display Concepts with highlighted text */}
+                                      {module.concepts && (String(module.concepts).trim().length > 0) && (
+                                        <div className="pl-4 pb-2">
+                                          <h5 className="text-sm font-semibold text-foreground mb-1">Concepts:</h5>
+                                          <p className="text-sm text-foreground whitespace-pre-wrap bg-yellow-100 dark:bg-yellow-900/30 px-3 py-2 rounded-md border-l-4 border-yellow-500">
+                                            {String(module.concepts).trim()}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Display Exercises with highlighted text */}
+                                      {module.exercises && (String(module.exercises).trim().length > 0) && (
+                                        <div className="pl-4 pb-2">
+                                          <h5 className="text-sm font-semibold text-foreground mb-1">Exercises:</h5>
+                                          <p className="text-sm text-foreground whitespace-pre-wrap bg-yellow-100 dark:bg-yellow-900/30 px-3 py-2 rounded-md border-l-4 border-yellow-500">
+                                            {String(module.exercises).trim()}
+                                          </p>
+                                        </div>
+                                      )}
+
+
                                       {/* Collect all unique notes from videos in this module */}
                                       {(() => {
                                         const moduleNotes: string[] = [];
@@ -238,22 +272,26 @@ const CourseDescription: React.FC = () => {
                                         return null;
                                       })()}
 
+                                      {/* Display Videos */}
                                       {module.videos && module.videos.length > 0 ? (
-                                        module.videos.map((video, videoIndex) => (
-                                          <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-4 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
-                                            <div className="flex items-center">
-                                              <PlayCircle className="h-4 w-4 mr-2 text-primary" />
-                                              <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
-                                                <span>{video.title}</span>
-                                              </Link>
+                                        <div className="pl-4 pb-2">
+                                          <h5 className="text-sm font-semibold text-foreground mb-1">Videos:</h5>
+                                          {module.videos.map((video, videoIndex) => (
+                                            <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-2 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
+                                              <div className="flex items-center">
+                                                <PlayCircle className="h-4 w-4 mr-2 text-primary" />
+                                                <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
+                                                  <span>{video.title}</span>
+                                                </Link>
+                                              </div>
+                                              <span className="text-xs text-gray-500">
+                                                {formatDurationMinutes(video.duration || 0)}
+                                              </span>
                                             </div>
-                                            <span className="text-xs text-gray-500">
-                                              {formatDurationMinutes(video.duration || 0)}
-                                            </span>
-                                          </div>
-                                        ))
+                                          ))}
+                                        </div>
                                       ) : (
-                                        <p className="p-2 text-sm text-muted-foreground">No videos in this module.</p>
+                                        <p className="p-2 text-sm text-muted-foreground pl-4">No videos in this module.</p>
                                       )}
 
                                       {/* Display module-level assessments */}
@@ -270,7 +308,7 @@ const CourseDescription: React.FC = () => {
 
                                         if (validModuleAssessments.length > 0) {
                                           return (
-                                            <div className="pl-4 pb-2 border-t border-border mt-2 pt-2">
+                                            <div className="pl-4 pb-2">
                                               <h5 className="text-sm font-semibold text-foreground mb-1">Assessments:</h5>
                                               <ul className="list-disc list-inside space-y-1">
                                                 {validModuleAssessments.map((assessment, assessmentIndex) => (
@@ -291,7 +329,8 @@ const CourseDescription: React.FC = () => {
                                         return null;
                                       })()}
                                     </div>
-                                  ))
+                                    );
+                                  })
                                 ) : (
                                   <p className="p-2 text-sm text-muted-foreground">No modules for this day.</p>
                                 )}

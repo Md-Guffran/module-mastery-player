@@ -116,8 +116,14 @@ router.post('/modules', auth, isAdmin, async (req, res) => {
 // @access  Admin
 router.put('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
-    const { title, videos, assessments } = req.body; // Extract assessments
-    const moduleFields = { title, videos, assessments }; // Include assessments in update
+    const { title, concepts, exercises, videos, assessments } = req.body; // Extract all fields
+    const moduleFields = { 
+      title, 
+      concepts: concepts || '',
+      exercises: exercises || '',
+      videos, 
+      assessments 
+    }; // Include all fields in update
 
     const module = await Module.findByIdAndUpdate(
       req.params.id,
@@ -241,7 +247,7 @@ router.get('/courses/:courseId', auth, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber, dayNumber } = req.params;
-    const { title, videos, assessments } = req.body; // Extract assessments
+    const { title, concepts, exercises, videos, assessments } = req.body; // Extract all fields
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -260,6 +266,8 @@ router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth
 
     const newModule = new Module({
       title,
+      concepts: concepts || '',
+      exercises: exercises || '',
       videos,
       assessments, // Pass assessments to the Module constructor
     });
@@ -316,7 +324,7 @@ router.post('/courses/:courseId/weeks', auth, isAdmin, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber } = req.params;
-    const { dayNumber, assessment, assessmentLink } = req.body; // Extract assessment and assessmentLink from body
+    const { dayNumber, assessment, assessmentLink } = req.body; // Extract day fields from body
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -332,12 +340,12 @@ router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (r
       return res.status(400).json({ msg: `Day ${dayNumber} already exists in Week ${weekNumber}.` });
     }
 
-    // Push new day with provided or default assessment data
+    // Push new day with provided or default data
     week.days.push({
       dayNumber,
       modules: [],
-      assessment: assessment,  // Default if not provided
-      assessmentLink: assessmentLink  // Default if not provided
+      assessment: assessment || '',  // Default if not provided
+      assessmentLink: assessmentLink || ''  // Default if not provided
     });
     await course.save();
 

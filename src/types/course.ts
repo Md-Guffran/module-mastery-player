@@ -12,21 +12,6 @@ export interface Lesson {
   notes: string[]; // Changed to string[]
 }
 
-export interface Module {
-  _id?: string;
-  id?: string;
-  title: string;
-  videos: Video[];
-  lessons?: Lesson[];
-}
-
-export interface Day {
-  _id?: string; // Add _id to Day interface
-  dayNumber: number;
-  modules: Module[];
-  assessment?: string;
-  assessmentLink?: string;
-}
 
 export interface UserAssessmentProgress {
   _id: string;
@@ -68,6 +53,8 @@ export interface Module {
   _id?: string;
   id?: string;
   title: string;
+  concepts?: string; // Optional concepts field
+  exercises?: string; // Optional exercises field
   videos: Video[];
   lessons?: Lesson[];
   assessments?: Assessment[]; // New field for multiple assessments
