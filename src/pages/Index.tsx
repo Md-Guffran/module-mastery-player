@@ -164,7 +164,7 @@ const Index = () => {
             {filteredCourses.map((course) => (
               <Link to={`/course/${course._id}`} key={course._id}>
                 <Card className="h-full flex flex-col rounded-lg shadow-md overflow-hidden group relative">
-                  <img src={course.imageUrl || "../genAi.png"} alt={course.title} className="w-full h-36 object-cover" />
+                  <img src={course.imageUrl || "/images/genAI.png"} alt={course.title} className="w-full h-36 object-cover" />
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-center mb-1">
                       <CardTitle className="text-lg font-bold">{course.title}</CardTitle>

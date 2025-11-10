@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
             </Button>
           )}
           <Link to="/" className="flex items-center space-x-1 max-w-[120px] flex-shrink-0 overflow-hidden">
-            <img src="/font.png" alt="Company Name" className="h-6 ml-1 object-contain flex-shrink-0" />
+            <img src="/images/font.png" alt="Company Name" className="h-6 ml-1 object-contain flex-shrink-0" />
           </Link>
           <nav className="hidden md:flex items-center space-x-4">
             <Link to="/" className="hover:text-primary transition-colors flex items-center">

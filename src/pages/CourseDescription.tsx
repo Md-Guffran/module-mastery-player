@@ -117,7 +117,7 @@ const CourseDescription: React.FC = () => {
       <Header />
       <div className="container mx-auto p-8 pt-24 bg-background rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-        <img src="/genAi.png" alt="Generative AI Development" className="w-full max-h-64 object-contain rounded-lg mb-6 mx-auto" />
+        <img src="/images/genAI.png" alt="Generative AI Development" className="w-full max-h-64 object-contain rounded-lg mb-6 mx-auto" />
         <div className="text-lg mb-4">
           {course.description.split('•').map((item, index) => (
             item.trim() && (
