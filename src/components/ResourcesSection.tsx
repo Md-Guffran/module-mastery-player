@@ -14,34 +14,66 @@ interface ResourcesSectionProps {
 }
 
 export const ResourcesSection = ({ notes, lessonTitle }: ResourcesSectionProps) => {
+  // Filter and process valid notes
+  const validNotes = notes
+    ? notes
+        .map((note) => {
+          const noteUrl = typeof note === 'string' ? note : note.url;
+          const noteTitle = typeof note === 'string' ? undefined : note.title;
+          return { noteUrl: noteUrl?.trim() || '', noteTitle };
+        })
+        .filter(({ noteUrl }) => {
+          // Only include valid, non-empty note URLs
+          const trimmed = noteUrl.trim();
+          return trimmed.length > 0 && 
+                 !trimmed.toLowerCase().includes('placeholder') &&
+                 (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/'));
+        })
+        .map(({ noteUrl, noteTitle }) => {
+          // Extract title from URL if not provided
+          let title = noteTitle;
+          if (!title) {
+            let extractedTitle = noteUrl.substring(noteUrl.lastIndexOf('/') + 1);
+            // If no filename found or it's empty, use the domain or a generic name
+            if (!extractedTitle || extractedTitle.trim() === '' || extractedTitle === noteUrl) {
+              try {
+                const urlObj = new URL(noteUrl.startsWith('/') ? `http://localhost${noteUrl}` : noteUrl);
+                extractedTitle = urlObj.hostname || 'Note';
+              } catch {
+                extractedTitle = 'Note';
+              }
+            }
+            // Remove query parameters and fragments from title
+            title = extractedTitle.split('?')[0].split('#')[0];
+          }
+          return { noteUrl, noteTitle: title };
+        })
+    : [];
+
   return (
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="text-xl">Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        {notes && notes.length > 0 ? (
+        {validNotes.length > 0 ? (
           <div className="space-y-3 mt-4">
-            {notes.map((note, index) => {
-              const noteUrl = typeof note === 'string' ? note : note.url;
-              const noteTitle = typeof note === 'string' ? `Note ${index + 1}` : note.title || `Note ${index + 1}`;
-              return (
-                <a
-                  key={index}
-                  href={noteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
-                >
-                  <div className="text-primary"><LinkIcon className="w-4 h-4" /></div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{noteTitle}</div>
-                    <div className="text-xs text-muted-foreground truncate">{noteUrl}</div>
-                  </div>
-                  <Download className="w-4 h-4 text-muted-foreground" />
-                </a>
-              );
-            })}
+            {validNotes.map((note, index) => (
+              <a
+                key={index}
+                href={note.noteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
+              >
+                <div className="text-primary"><LinkIcon className="w-4 h-4" /></div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{note.noteTitle}</div>
+                  <div className="text-xs text-muted-foreground truncate">{note.noteUrl}</div>
+                </div>
+                <Download className="w-4 h-4 text-muted-foreground" />
+              </a>
+            ))}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">

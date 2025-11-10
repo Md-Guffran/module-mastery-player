@@ -180,6 +180,59 @@ const CourseDescription: React.FC = () => {
                                   day.modules.map((module, moduleIndex) => (
                                     <div key={module._id || module.id || moduleIndex} className="space-y-1 pl-4">
                                       <h4 className="text-md font-medium text-muted-foreground">{module.title}</h4>
+                                      {/* Collect all unique notes from videos in this module */}
+                                      {(() => {
+                                        const moduleNotes: string[] = [];
+                                        module.videos.forEach(video => {
+                                          if (video.notesUrl) {
+                                            video.notesUrl.forEach(noteUrl => {
+                                              // Only include valid, non-empty note URLs
+                                              const trimmed = noteUrl?.trim() || '';
+                                              if (trimmed.length > 0 && 
+                                                  !trimmed.toLowerCase().includes('placeholder') &&
+                                                  (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) &&
+                                                  !moduleNotes.includes(trimmed)) {
+                                                moduleNotes.push(trimmed);
+                                              }
+                                            });
+                                          }
+                                        });
+
+                                        if (moduleNotes.length > 0) {
+                                          return (
+                                            <div className="pl-4 pb-2">
+                                              <h5 className="text-sm font-semibold text-foreground mb-1">Notes:</h5>
+                                              <ul className="list-disc list-inside space-y-1">
+                                                {moduleNotes.map((noteUrl, noteIndex) => {
+                                                  // Extract filename from URL, or use a meaningful default
+                                                  let noteTitle = noteUrl.substring(noteUrl.lastIndexOf('/') + 1);
+                                                  // If no filename found or it's empty, use the domain or a generic name
+                                                  if (!noteTitle || noteTitle.trim() === '' || noteTitle === noteUrl) {
+                                                    try {
+                                                      const urlObj = new URL(noteUrl.startsWith('/') ? `http://localhost${noteUrl}` : noteUrl);
+                                                      noteTitle = urlObj.hostname || 'Note';
+                                                    } catch {
+                                                      noteTitle = 'Note';
+                                                    }
+                                                  }
+                                                  // Remove query parameters and fragments from title
+                                                  noteTitle = noteTitle.split('?')[0].split('#')[0];
+                                                  
+                                                  return (
+                                                    <li key={noteIndex} className="text-sm">
+                                                      <a href={noteUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
+                                                        {noteTitle}
+                                                      </a>
+                                                    </li>
+                                                  );
+                                                })}
+                                              </ul>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+
                                       {module.videos && module.videos.length > 0 ? (
                                         module.videos.map((video, videoIndex) => (
                                           <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-4 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
@@ -197,25 +250,77 @@ const CourseDescription: React.FC = () => {
                                       ) : (
                                         <p className="p-2 text-sm text-muted-foreground">No videos in this module.</p>
                                       )}
+
+                                      {/* Display module-level assessments */}
+                                      {(() => {
+                                        const moduleAssessments = module.assessments || [];
+                                        const validModuleAssessments = moduleAssessments.filter(assessment => {
+                                          const title = assessment.title?.trim() || '';
+                                          const link = assessment.link?.trim() || '';
+                                          return title && 
+                                                 title.toLowerCase() !== 'sample assessment' &&
+                                                 title.toLowerCase() !== 'placeholder' &&
+                                                 title.length > 0;
+                                        });
+
+                                        if (validModuleAssessments.length > 0) {
+                                          return (
+                                            <div className="pl-4 pb-2 border-t border-border mt-2 pt-2">
+                                              <h5 className="text-sm font-semibold text-foreground mb-1">Assessments:</h5>
+                                              <ul className="list-disc list-inside space-y-1">
+                                                {validModuleAssessments.map((assessment, assessmentIndex) => (
+                                                  <li key={assessmentIndex} className="text-sm">
+                                                    {assessment.link ? (
+                                                      <a href={assessment.link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
+                                                        {assessment.title}
+                                                      </a>
+                                                    ) : (
+                                                      <span>{assessment.title}</span>
+                                                    )}
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                     </div>
                                   ))
                                 ) : (
                                   <p className="p-2 text-sm text-muted-foreground">No modules for this day.</p>
                                 )}
-                                {(day.assessment && day.assessment.trim()) && (
-                                  <div className="flex items-center justify-between py-2 pl-4 pr-2 border-t border-border mt-2 pt-2">
-                                    <div className="flex items-center">
-                                      <FileText className="h-4 w-4 mr-2 text-secondary-foreground" />
-                                      {day.assessmentLink && day.assessmentLink.trim() ? (
-                                        <a href={day.assessmentLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm text-blue-500">
-                                          <span>Assessment: {day.assessment}</span>
-                                        </a>
-                                      ) : (
-                                        <span className="text-sm">Assessment: {day.assessment}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
+                                {(() => {
+                                  // Also display day-level assessments if they exist (for backward compatibility)
+                                  const assessmentTitle = day.assessment?.trim() || '';
+                                  const assessmentLink = day.assessmentLink?.trim() || '';
+                                  
+                                  // Only show if assessment exists, is not empty, and is not a placeholder
+                                  const isValidAssessment = assessmentTitle && 
+                                                           assessmentTitle.toLowerCase() !== 'sample assessment' &&
+                                                           assessmentTitle.toLowerCase() !== 'placeholder' &&
+                                                           assessmentTitle.length > 0;
+                                  
+                                  if (isValidAssessment) {
+                                    return (
+                                      <div className="pl-4 pb-2 border-t border-border mt-2 pt-2">
+                                        <h5 className="text-sm font-semibold text-foreground mb-1">Assessments:</h5>
+                                        <ul className="list-disc list-inside space-y-1">
+                                          <li className="text-sm">
+                                            {assessmentLink ? (
+                                              <a href={assessmentLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
+                                                {assessmentTitle}
+                                              </a>
+                                            ) : (
+                                              <span>{assessmentTitle}</span>
+                                            )}
+                                          </li>
+                                        </ul>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </AccordionContent>
                             </AccordionItem>
                           ))}

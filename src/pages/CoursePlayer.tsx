@@ -145,13 +145,63 @@ const CoursePlayer = () => {
 
   const allAssessments = course
     ? course.weeks.flatMap(week =>
-        week.days.filter(day => day.assessment).map(day => ({
-          _id: day._id, // Include day's unique ID
-          dayNumber: day.dayNumber,
-          weekNumber: week.weekNumber,
-          assessment: day.assessment,
-          assessmentLink: day.assessmentLink,
-        }))
+        week.days.flatMap(day => {
+          const assessments: Array<{
+            _id?: string;
+            dayId?: string;
+            dayNumber: number;
+            weekNumber: number;
+            assessment: string;
+            assessmentLink: string;
+            moduleId?: string;
+            moduleTitle?: string;
+          }> = [];
+
+          // Collect module-level assessments
+          day.modules.forEach(module => {
+            if (module.assessments && module.assessments.length > 0) {
+              module.assessments.forEach(assessment => {
+                const title = assessment.title?.trim() || '';
+                const link = assessment.link?.trim() || '';
+                // Filter out placeholder assessments
+                if (title && 
+                    title.toLowerCase() !== 'sample assessment' &&
+                    title.toLowerCase() !== 'placeholder' &&
+                    title.length > 0) {
+                  assessments.push({
+                    _id: assessment._id || module._id,
+                    dayId: day._id,
+                    dayNumber: day.dayNumber,
+                    weekNumber: week.weekNumber,
+                    assessment: title,
+                    assessmentLink: link,
+                    moduleId: module._id || module.id,
+                    moduleTitle: module.title,
+                  });
+                }
+              });
+            }
+          });
+
+          // Also include day-level assessments (for backward compatibility)
+          const dayAssessmentTitle = day.assessment?.trim() || '';
+          const dayAssessmentLink = day.assessmentLink?.trim() || '';
+          if (dayAssessmentTitle && 
+              dayAssessmentTitle.toLowerCase() !== 'sample assessment' &&
+              dayAssessmentTitle.toLowerCase() !== 'placeholder' &&
+              dayAssessmentTitle.length > 0) {
+            assessments.push({
+              _id: day._id,
+              dayId: day._id,
+              dayNumber: day.dayNumber,
+              weekNumber: week.weekNumber,
+              assessment: dayAssessmentTitle,
+              assessmentLink: dayAssessmentLink,
+            });
+          }
+
+          return assessments;
+        })
       )
     : [];
 
@@ -365,14 +415,10 @@ const CoursePlayer = () => {
                   <div className="space-y-4">
                     {allAssessments.map((assessment, index) => (
                       <div key={index} className="bg-secondary p-4 rounded-lg shadow-sm">
-                        <h3 className="text-xl font-semibold text-foreground">Week {assessment.weekNumber}, Day {assessment.dayNumber}: {assessment.assessment}</h3>
-                        {assessment.assessmentLink && (
-                          <p className="text-muted-foreground mt-2">
-                            <a href={assessment.assessmentLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                              View Assessment
-                            </a>
-                          </p>
-                        )}
+                        <h3 className="text-xl font-semibold text-foreground">
+                          Week {assessment.weekNumber}, Day {assessment.dayNumber}
+                          {assessment.moduleTitle && ` - ${assessment.moduleTitle}`}: {assessment.assessment}
+                        </h3>
                         {assessment.assessmentLink && (
                           <p className="text-muted-foreground mt-2">
                             <a href={assessment.assessmentLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">

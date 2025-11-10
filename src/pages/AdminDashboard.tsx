@@ -49,13 +49,16 @@ const AdminDashboard: React.FC = () => {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [modules, setModules] = useState<Module[]>([]); // This will now represent modules within a selected course
   const [courses, setCourses] = useState<Course[]>([]); // State to hold all courses
-  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [''] }], assessments: [{ title: '', link: '' }] }); // Initialize with empty notesUrl array and assessments
+  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [] }], assessments: [] }); // Initialize with empty notesUrl array and assessments
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [newDayAssessment, setNewDayAssessment] = useState<string>(''); // State for new day assessment title
+  const [newDayAssessmentLink, setNewDayAssessmentLink] = useState<string>(''); // State for new day assessment link
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
+  const [newModuleAssessments, setNewModuleAssessments] = useState<{ title: string; link: string }[]>([]);
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
 
@@ -193,6 +196,20 @@ const AdminDashboard: React.FC = () => {
     setNewModule({ ...newModule, videos: updatedVideos });
   };
 
+  const handleNewVideoNotesUrlChange = (videoIndex: number, noteIndex: number, value: string) => {
+    setNewModule(prevModule => {
+      const updatedVideos = prevModule.videos.map((video, i) => {
+        if (i === videoIndex) {
+          const updatedNotes = [...(video.notesUrl || [])];
+          updatedNotes[noteIndex] = value;
+          return { ...video, notesUrl: updatedNotes };
+        }
+        return video;
+      });
+      return { ...prevModule, videos: updatedVideos };
+    });
+  };
+
   // Handler for submitting a new module to the selected course
   const handleSubmitNewModule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,7 +244,9 @@ const AdminDashboard: React.FC = () => {
       const dayExists = await ensureDayExists(
         selectedCourseIdForModules,
         selectedWeek,
-        selectedDay
+        selectedDay,
+        newDayAssessment, // Pass assessment title
+        newDayAssessmentLink // Pass assessment link
       );
       if (!dayExists) {
         alert('Failed to create or find day.');
@@ -265,9 +284,9 @@ const AdminDashboard: React.FC = () => {
       videos: module.videos.map(video => ({
         ...video,
         duration: video.duration ? secondsToMinutes(video.duration) : 0, // Convert seconds to minutes for display
-        notesUrl: video.notesUrl || [''], // Ensure notesUrl is an array
+        notesUrl: video.notesUrl || [], // Ensure notesUrl is an array
       })),
-      assessments: module.assessments && module.assessments.length > 0 ? module.assessments : [{ title: '', link: '' }], // Ensure assessments is an array
+      assessments: module.assessments || [], // Ensure assessments is an array
     });
   };
 
@@ -306,6 +325,22 @@ const AdminDashboard: React.FC = () => {
     if (editedModule) {
       const updatedVideos = editedModule.videos.filter((_, i) => i !== index);
       setEditedModule({ ...editedModule, videos: updatedVideos });
+    }
+  };
+
+  const handleEditedVideoNotesUrlChange = (videoIndex: number, noteIndex: number, value: string) => {
+    if (editedModule) {
+      setEditedModule(prevModule => {
+        const updatedVideos = prevModule!.videos.map((video, i) => {
+          if (i === videoIndex) {
+            const updatedNotes = [...(video.notesUrl || [])];
+            updatedNotes[noteIndex] = value;
+            return { ...video, notesUrl: updatedNotes };
+          }
+          return video;
+        });
+        return { ...prevModule!, videos: updatedVideos };
+      });
     }
   };
 
@@ -394,7 +429,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Helper function to ensure day exists, create if it doesn't
-  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number): Promise<boolean> => {
+  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number, assessment: string, assessmentLink: string): Promise<boolean> => {
     try {
       // First ensure week exists
       const weekOk = await ensureWeekExists(courseId, weekNumber);
@@ -413,7 +448,7 @@ const AdminDashboard: React.FC = () => {
       const dayExists = week.days.some(d => d.dayNumber === dayNumber);
       if (!dayExists) {
         try {
-          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber });
+          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber, assessment, assessmentLink });
         } catch (error) {
           // If day already exists (400 error), that's fine
           if (axios.isAxiosError(error) && error.response?.status === 400) {
@@ -732,28 +767,59 @@ const AdminDashboard: React.FC = () => {
                                                   />
                                                 </div>
                                                 <div>
-                                                  <Label htmlFor={`editedResourcesUrl-${index}`}>
-                                                    Resources URL (Optional)
-                                                  </Label>
-                                                  <Input
-                                                    id={`editedResourcesUrl-${index}`}
-                                                    type="url"
-                                                    name="resourcesUrl"
-                                                    value={video.resourcesUrl || ''}
-                                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label htmlFor={`editedNotesUrl-${index}`}>
-                                                    Notes URL (Optional)
-                                                  </Label>
-                                                  <Input
-                                                    id={`editedNotesUrl-${index}`}
-                                                    type="url"
-                                                    name="notesUrl"
-                                                    value={video.notesUrl || ''}
-                                                    onChange={(e) => handleEditedVideoChange(index, e)}
-                                                  />
+                                                  <Label>Notes URLs (Optional)</Label>
+                                                  {video.notesUrl?.map((note, noteIndex) => (
+                                                    <div key={noteIndex} className="flex items-center gap-2 mb-2">
+                                                      <Input
+                                                        type="url"
+                                                        value={note}
+                                                        onChange={(e) => handleEditedVideoNotesUrlChange(index, noteIndex, e.target.value)}
+                                                        placeholder={`Note URL ${noteIndex + 1}`}
+                                                      />
+                                                      <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                          if (editedModule) {
+                                                            setEditedModule(prevModule => {
+                                                              const updatedVideos = prevModule!.videos.map((v, i) => {
+                                                                if (i === index) {
+                                                                  const updatedNotes = (v.notesUrl || []).filter((_, idx) => idx !== noteIndex);
+                                                                  return { ...v, notesUrl: updatedNotes };
+                                                                }
+                                                                return v;
+                                                              });
+                                                              return { ...prevModule!, videos: updatedVideos };
+                                                            });
+                                                          }
+                                                        }}
+                                                      >
+                                                        <MinusCircle className="w-4 h-4" />
+                                                      </Button>
+                                                    </div>
+                                                  ))}
+                                                  <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      if (editedModule) {
+                                                        setEditedModule(prevModule => {
+                                                          const updatedVideos = prevModule!.videos.map((v, i) => {
+                                                            if (i === index) {
+                                                              return { ...v, notesUrl: [...(v.notesUrl || []), ''] };
+                                                            }
+                                                            return v;
+                                                          });
+                                                          return { ...prevModule!, videos: updatedVideos };
+                                                        });
+                                                      }
+                                                    }}
+                                                    className="mb-4"
+                                                  >
+                                                    <PlusCircle className="w-4 h-4 mr-2" /> Add Note URL
+                                                  </Button>
                                                 </div>
                                                 <div>
                                                   <Label htmlFor={`editedDuration-${index}`}>
@@ -786,27 +852,6 @@ const AdminDashboard: React.FC = () => {
                                           <PlusCircle className="w-4 h-4 mr-2" /> Add Video
                                         </Button>
 
-                                        <h3 className="text-md font-semibold mt-6 mb-2">Day Assessment</h3>
-                                        <div>
-                                          <Label htmlFor="editedDayAssessment">Assessment Title (Optional)</Label>
-                                          <Input
-                                            id="editedDayAssessment"
-                                            type="text"
-                                            value={editedDayAssessment}
-                                            onChange={(e) => setEditedDayAssessment(e.target.value)}
-                                            placeholder="e.g., Week 1 Day 1 Quiz"
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label htmlFor="editedDayAssessmentLink">Assessment Link (Optional)</Label>
-                                          <Input
-                                            id="editedDayAssessmentLink"
-                                            type="url"
-                                            value={editedDayAssessmentLink}
-                                            onChange={(e) => setEditedDayAssessmentLink(e.target.value)}
-                                            placeholder="e.g., https://forms.gle/..."
-                                          />
-                                        </div>
 
                                         <Button onClick={handleUpdateModule} className="mr-2">
                                           <Save className="w-4 h-4 mr-2" /> Save Changes
@@ -934,11 +979,7 @@ const AdminDashboard: React.FC = () => {
                               <Input
                                 type="url"
                                 value={note}
-                                onChange={(e) => {
-                                  const updatedNotes = [...(video.notesUrl || [])];
-                                  updatedNotes[noteIndex] = e.target.value;
-                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
-                                }}
+                                onChange={(e) => handleNewVideoNotesUrlChange(videoIndex, noteIndex, e.target.value)}
                                 placeholder={`Note URL ${noteIndex + 1}`}
                               />
                               <Button
@@ -947,7 +988,7 @@ const AdminDashboard: React.FC = () => {
                                 size="icon"
                                 onClick={() => {
                                   const updatedNotes = (video.notesUrl || []).filter((_, i) => i !== noteIndex);
-                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
+                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } as unknown as EventTarget & HTMLInputElement });
                                 }}
                               >
                                 <MinusCircle className="w-4 h-4" />
@@ -960,7 +1001,7 @@ const AdminDashboard: React.FC = () => {
                             size="sm"
                             onClick={() => {
                               const updatedNotes = [...(video.notesUrl || []), ''];
-                              handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
+                              handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } as unknown as EventTarget & HTMLInputElement });
                             }}
                           >
                             <PlusCircle className="w-4 h-4 mr-2" /> Add Note URL

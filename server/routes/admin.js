@@ -316,7 +316,7 @@ router.post('/courses/:courseId/weeks', auth, isAdmin, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber } = req.params;
-    const { dayNumber } = req.body;
+    const { dayNumber, assessment, assessmentLink } = req.body; // Extract assessment and assessmentLink from body
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -332,7 +332,13 @@ router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (r
       return res.status(400).json({ msg: `Day ${dayNumber} already exists in Week ${weekNumber}.` });
     }
 
-    week.days.push({ dayNumber, modules: [] });
+    // Push new day with provided or default assessment data
+    week.days.push({
+      dayNumber,
+      modules: [],
+      assessment: assessment,  // Default if not provided
+      assessmentLink: assessmentLink  // Default if not provided
+    });
     await course.save();
 
     const updatedCourse = await Course.findById(courseId).populate({
