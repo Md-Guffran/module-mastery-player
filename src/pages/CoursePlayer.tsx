@@ -102,18 +102,23 @@ const CoursePlayer = () => {
         selectedVideo = course.weeks[0].days[0].modules[0].videos[0];
       }
 
-      if (selectedVideo && !currentLesson) {
-        setCurrentLesson({
-          id: selectedVideo._id,
-          title: selectedVideo.title,
-          description: '',
-          videoUrl: selectedVideo.url,
-          duration: selectedVideo.duration || 0,
-          notes: selectedVideo.notesUrl || [], // notes is now string[]
-        });
+      // Update currentLesson if video changes or if it's the initial load
+      if (selectedVideo) {
+        const newLessonId = selectedVideo._id || selectedVideo.id;
+        // Only update if the lesson ID has changed or if currentLesson is null
+        if (!currentLesson || currentLesson.id !== newLessonId) {
+          setCurrentLesson({
+            id: newLessonId || '',
+            title: selectedVideo.title,
+            description: '',
+            videoUrl: selectedVideo.url,
+            duration: selectedVideo.duration || 0,
+            notes: selectedVideo.notesUrl || [], // notes is now string[]
+          });
+        }
       }
     }
-  }, [course, currentLesson, moduleId, videoId]);
+  }, [course, moduleId, videoId]); // Removed currentLesson from dependencies to allow updates
 
 
   const allLessons = course
