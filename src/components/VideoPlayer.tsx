@@ -288,6 +288,12 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
     if (time === undefined) return;
     playerRef.current?.seekTo(Math.max(0, time - 10), true);
   };
+
+  const handleForwardSeek = () => {
+    const time = playerRef.current?.getCurrentTime();
+    if (time === undefined || !duration) return;
+    playerRef.current?.seekTo(Math.min(duration, time + 10), true);
+  };
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => { // Add volume change handler
     const newVolume = parseInt(e.target.value, 10);
     setVolume(newVolume);
@@ -332,7 +338,8 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
       const clickX = e.clientX - rect.left;
       const width = rect.width;
       const clickedTime = (clickX / width) * duration;
-      const newTime = Math.min(clickedTime, watchedSeconds);
+      // Allow seeking to any position in the video (not limited to watchedSeconds)
+      const newTime = Math.max(0, Math.min(duration, clickedTime));
       playerRef.current.seekTo(newTime, true);
       setCurrentTime(newTime);
     }
@@ -364,13 +371,16 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
           />
         </div>
         <div className="flex items-center justify-between gap-2 md:gap-4 mt-2 text-white text-xs md:text-sm overflow-x-auto">
-          {/* Left side: Play, Rewind, Time */}
+          {/* Left side: Play, Rewind, Forward, Time */}
           <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
             <Button onClick={handlePlayPause} variant="ghost" size="icon" className="h-8 w-8 md:h-8 md:w-8 bg-blue-600 hover:bg-blue-700 text-white">
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
             <Button onClick={handleBackwardSeek} variant="ghost" size="icon" className="h-8 w-8 md:h-8 md:w-8">
               <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleForwardSeek} variant="ghost" size="icon" className="h-8 w-8 md:h-8 md:w-8">
+              <RotateCw className="h-4 w-4" />
             </Button>
             <span className="text-xs md:text-sm whitespace-nowrap">{formatDurationMMSS(currentTime)} / {formatDurationMMSS(duration)}</span>
           </div>
