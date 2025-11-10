@@ -126,7 +126,7 @@ const CourseDescription: React.FC = () => {
         <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
         <img src="/images/genAI.png" alt="Generative AI Development" className="w-full max-h-64 object-contain rounded-lg mb-6 mx-auto" />
         <div className="bg-secondary p-6 rounded-lg mb-6">
-          <h2 className="text-2xl font-bold mb-4 text-foreground">Course Concepts</h2>
+          <h2 className="text-2xl font-bold mb-4 text-foreground">Course Topics</h2>
           <div className="text-xl leading-relaxed space-y-4">
             {course.description.split('•').map((item, index) => (
               item.trim() && (
@@ -219,11 +219,11 @@ const CourseDescription: React.FC = () => {
                                       )}
                                      
       <div className="pl-4 pb-2">
-  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Courses:</h2>
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Notes:</h2>
 </div>
 
-
-
+                                     
+    
                                       {/* Collect all unique notes from videos in this module */}
                                       {(() => {
                                         const moduleNotes: string[] = [];
@@ -277,6 +277,10 @@ const CourseDescription: React.FC = () => {
                                         return null;
                                       })()}
 
+                                            <div className="pl-4 pb-2">
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Videos:</h2>
+</div>
+
                                       {/* Display Videos */}
                                       {module.videos && module.videos.length > 0 ? (
                                         <div className="pl-4 pb-2">
@@ -298,6 +302,9 @@ const CourseDescription: React.FC = () => {
                                       ) : (
                                         <p className="p-2 text-sm text-muted-foreground pl-4">No videos in this module.</p>
                                       )}
+                                            <div className="pl-4 pb-2">
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Exercises:</h2>
+</div>
 
                                       {/* Display module-level assessments */}
                                       {(() => {
@@ -314,7 +321,7 @@ const CourseDescription: React.FC = () => {
                                         if (validModuleAssessments.length > 0) {
                                           return (
                                             <div className="pl-4 pb-2">
-                                              <h5 className="text-sm font-semibold text-foreground mb-1">Assessments:</h5>
+                                              <h5 className="text-sm font-semibold text-foreground mb-1">Exercises:</h5>
                                               <ul className="list-disc list-inside space-y-1">
                                                 {validModuleAssessments.map((assessment, assessmentIndex) => (
                                                   <li key={assessmentIndex} className="text-sm">
