@@ -118,23 +118,31 @@ const CourseDescription: React.FC = () => {
       <div className="container mx-auto p-8 pt-24 bg-background rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
         <img src="/images/genAI.png" alt="Generative AI Development" className="w-full max-h-64 object-contain rounded-lg mb-6 mx-auto" />
-        <div className="text-lg mb-4">
-          {course.description.split('•').map((item, index) => (
-            item.trim() && (
-              index === 0 ? (
-                <p key={index} className="mb-2">{item.trim()}</p>
-              ) : (
-                <ul key={index} className="list-disc pl-5 space-y-1">
-                  <li>{item.trim()}</li>
-                </ul>
+        <div className="bg-secondary p-6 rounded-lg mb-6">
+          <h2 className="text-2xl font-bold mb-4 text-foreground">Course Concepts</h2>
+          <div className="text-xl leading-relaxed space-y-4">
+            {course.description.split('•').map((item, index) => (
+              item.trim() && (
+                index === 0 ? (
+                  <p key={index}>{item.trim()}</p>
+                ) : (
+                  <ul key={index} className="list-disc pl-5 space-y-2">
+                    <li>{item.trim()}</li>
+                  </ul>
+                )
               )
-            )
-          ))}
+            ))}
+          </div>
         </div>
-        <p className="text-sm mb-2">Skills: {course.skills}</p>
-        <p className="text-sm mb-2">Tools: {course.tools}</p>
-        <p className="text-sm mb-2">Level: {course.level}</p>
-        <p className="text-sm mb-4">Duration: {course.duration}</p>
+        <div className="bg-secondary p-6 rounded-lg mb-6">
+          <h2 className="text-2xl font-bold mb-4 text-foreground">Course Details</h2>
+          <div className="text-lg space-y-2">
+            <p><strong>Skills:</strong> {course.skills}</p>
+            <p><strong>Tools:</strong> {course.tools}</p>
+            <p><strong>Level:</strong> {course.level}</p>
+            <p><strong>Duration:</strong> {course.duration}</p>
+          </div>
+        </div>
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Course content</h2>
           <Accordion type="multiple" className="w-full">
