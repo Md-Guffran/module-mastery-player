@@ -154,13 +154,18 @@ const CourseDescription: React.FC = () => {
           <h2 className="text-3xl font-bold mb-6 text-foreground">Course Content</h2>
           {course.weeks && course.weeks.length > 0 ? (
             <Tabs value={activeWeek} onValueChange={setActiveWeek} className="w-full">
-              <TabsList className="grid w-full grid-flow-col auto-cols-max justify-start overflow-x-auto gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4 overflow-x-auto pb-2">
                 {course.weeks.map((week) => (
-                  <TabsTrigger key={`week-${week.weekNumber}`} value={`week-${week.weekNumber}`} className="min-w-[120px] py-2 px-4 rounded-lg shadow-md">
+                  <Button
+                    key={`week-${week.weekNumber}`}
+                    onClick={() => setActiveWeek(`week-${week.weekNumber}`)}
+                    variant={activeWeek === `week-${week.weekNumber}` ? 'default' : 'outline'}
+                    className="min-w-[120px] py-2 px-4 rounded-lg shadow-md text-sm sm:text-base"
+                  >
                     Week {week.weekNumber}
-                  </TabsTrigger>
+                  </Button>
                 ))}
-              </TabsList>
+              </div>
               {course.weeks.map((week) => (
                 <TabsContent key={`week-${week.weekNumber}`} value={`week-${week.weekNumber}`}>
                   <Card className="rounded-lg shadow-lg bg-card text-card-foreground">
