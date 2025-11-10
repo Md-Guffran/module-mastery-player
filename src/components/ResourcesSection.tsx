@@ -18,16 +18,16 @@ export const ResourcesSection = ({ notes, lessonTitle }: ResourcesSectionProps) 
   const validNotes = notes
     ? notes
         .map((note) => {
-          const noteUrl = typeof note === 'string' ? note : note.url;
-          const noteTitle = typeof note === 'string' ? undefined : note.title;
-          return { noteUrl: noteUrl?.trim() || '', noteTitle };
+          const rawNoteUrl = typeof note === 'string' ? note : note?.url;
+          const noteUrl = typeof rawNoteUrl === 'string' ? rawNoteUrl.trim() : '';
+          const noteTitle = typeof note === 'string' ? undefined : note?.title;
+          return { noteUrl, noteTitle };
         })
         .filter(({ noteUrl }) => {
           // Only include valid, non-empty note URLs
-          const trimmed = noteUrl.trim();
-          return trimmed.length > 0 && 
-                 !trimmed.toLowerCase().includes('placeholder') &&
-                 (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/'));
+          return noteUrl.length > 0 && 
+                 !noteUrl.toLowerCase().includes('placeholder') &&
+                 (noteUrl.startsWith('http://') || noteUrl.startsWith('https://') || noteUrl.startsWith('/'));
         })
         .map(({ noteUrl, noteTitle }) => {
           // Extract title from URL if not provided

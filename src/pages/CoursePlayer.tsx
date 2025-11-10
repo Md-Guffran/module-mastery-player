@@ -10,8 +10,9 @@ import { Course, Module, Lesson, Week, Day, UserAssessmentProgress } from '@/typ
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'; // Import Sheet components
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'; // Import Sheet components
 import { ChevronRight, CheckCircle, XCircle, Clock, Send, Menu } from 'lucide-react'; // Import Menu icon
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '@/config';
 import Header from '@/components/Header';
@@ -20,17 +21,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile hook
 
-interface YouTubePlayer {
-  getCurrentTime: () => number;
-  // Add other methods if needed
-}
-
-interface YouTubePlayerWindow extends Window {
-  YT: {
-    get: (id: string) => YouTubePlayer | undefined;
-    // Add other YT properties if needed
-  };
-}
 
 import { formatDurationMMSS } from '@/utils/duration';
 
@@ -318,6 +308,12 @@ const CoursePlayer = () => {
         {isMobile ? (
           <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetContent side="left" className="p-0 w-80">
+              <VisuallyHidden asChild>
+                <SheetTitle>Course Navigation</SheetTitle>
+              </VisuallyHidden>
+              <VisuallyHidden asChild>
+                <SheetDescription>Select a lesson or assessment to view its content.</SheetDescription>
+              </VisuallyHidden>
               <CourseSidebar
                 course={course}
                 currentLessonId={currentLesson.id}

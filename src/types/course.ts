@@ -45,6 +45,7 @@ export interface Video {
 }
 
 export interface Assessment { // New interface for assessments
+  _id?: string; // Add optional _id
   title: string;
   link: string;
 }

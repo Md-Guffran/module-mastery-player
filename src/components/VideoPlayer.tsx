@@ -63,7 +63,7 @@ interface YouTubePlayerOptions {
 }
 
 interface YouTube {
-  Player: new (elementId: string, options: YouTubePlayerOptions) => YouTubePlayer;
+  Player: new (element: string | HTMLElement, options: YouTubePlayerOptions) => YouTubePlayer;
   PlayerState: {
     ENDED: number;
     PLAYING: number;
@@ -185,6 +185,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
           rel: 0,
           modestbranding: 1, // Further attempts to minimize YouTube branding and controls
           origin: window.location.origin,
+          playsinline: 1, // Ensure video plays inline on iOS
         },
         events: {
           onReady: (event: YouTubePlayerEvent) => {
@@ -196,6 +197,14 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
         },
       });
     }
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+        setIsPlayerReady(false);
+      }
+    };
   }, [isApiReady, videoId, playbackRate]); // Added playbackRate to dependencies
 
   // ✅ Resume from last progress
