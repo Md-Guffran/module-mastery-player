@@ -218,10 +218,10 @@ const CourseDescription: React.FC = () => {
                                         </div>
                                       )}
                                      
-                                        <div className="pl-4 pb-2">
-                                          <h2 className="text-sm font-semibold text-foreground mb-1">Recommended Courses:</h2>
-                                        </div>
-                                    
+      <div className="pl-4 pb-2">
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Courses:</h2>
+</div>
+
 
 
                                       {/* Collect all unique notes from videos in this module */}
