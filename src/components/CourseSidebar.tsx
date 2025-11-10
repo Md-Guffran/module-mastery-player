@@ -29,8 +29,7 @@ export const CourseSidebar = ({
           description: '', // Assuming description is not directly on video
           videoUrl: video.url,
           duration: video.duration || 0,
-          resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
-          notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
+          notes: video.notesUrl || [], // notes is now string[]
         }))
       )
     )

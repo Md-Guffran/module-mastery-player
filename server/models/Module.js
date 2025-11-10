@@ -15,12 +15,7 @@ const ModuleSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
-      resourcesUrl: {
-        type: String,
-      },
-      notesUrl: {
-        type: String,
-      },
+      notesUrl: [String], // Correctly defined as an array of strings
       duration: {
         type: Number,
         required: true,
@@ -28,6 +23,16 @@ const ModuleSchema = new mongoose.Schema({
       },
     },
   ],
+  assessments: [{ // New field for multiple assessments, directly under ModuleSchema
+    title: {
+      type: String,
+      required: true,
+    },
+    link: {
+      type: String,
+      required: true,
+    },
+  }],
 });
 
 const Module = mongoose.model('Module', ModuleSchema);

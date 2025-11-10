@@ -116,8 +116,8 @@ router.post('/modules', auth, isAdmin, async (req, res) => {
 // @access  Admin
 router.put('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
-    const { title, videos } = req.body; // Removed week and day from module update
-    const moduleFields = { title, videos };
+    const { title, videos, assessments } = req.body; // Extract assessments
+    const moduleFields = { title, videos, assessments }; // Include assessments in update
 
     const module = await Module.findByIdAndUpdate(
       req.params.id,
@@ -241,7 +241,7 @@ router.get('/courses/:courseId', auth, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber, dayNumber } = req.params;
-    const { title, videos } = req.body;
+    const { title, videos, assessments } = req.body; // Extract assessments
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -261,6 +261,7 @@ router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth
     const newModule = new Module({
       title,
       videos,
+      assessments, // Pass assessments to the Module constructor
     });
 
     const savedModule = await newModule.save();
@@ -273,7 +274,7 @@ router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth
     });
     res.status(201).json(updatedCourse);
   } catch (err) {
-    console.error('Error adding module to course:', err.message);
+    console.error('Error adding module to course:', err.stack); // Log full error stack
     res.status(500).send('Server Error');
   }
 });
@@ -315,7 +316,7 @@ router.post('/courses/:courseId/weeks', auth, isAdmin, async (req, res) => {
 router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (req, res) => {
   try {
     const { courseId, weekNumber } = req.params;
-    const { dayNumber, assessment, assessmentLink } = req.body;
+    const { dayNumber } = req.body;
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -331,7 +332,7 @@ router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (r
       return res.status(400).json({ msg: `Day ${dayNumber} already exists in Week ${weekNumber}.` });
     }
 
-    week.days.push({ dayNumber, modules: [], assessment, assessmentLink });
+    week.days.push({ dayNumber, modules: [] });
     await course.save();
 
     const updatedCourse = await Course.findById(courseId).populate({
@@ -340,7 +341,7 @@ router.post('/courses/:courseId/weeks/:weekNumber/days', auth, isAdmin, async (r
     });
     res.status(201).json(updatedCourse);
   } catch (err) {
-    console.error('Error adding day to week:', err.message);
+    console.error('Error adding day to week:', err.stack); // Log full error stack
     res.status(500).send('Server Error');
   }
 });

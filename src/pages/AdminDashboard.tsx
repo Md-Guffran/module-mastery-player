@@ -49,16 +49,12 @@ const AdminDashboard: React.FC = () => {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [modules, setModules] = useState<Module[]>([]); // This will now represent modules within a selected course
   const [courses, setCourses] = useState<Course[]>([]); // State to hold all courses
-  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0 }] });
+  const [newModule, setNewModule] = useState<Module>({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [''] }], assessments: [{ title: '', link: '' }] }); // Initialize with empty notesUrl array and assessments
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editedModule, setEditedModule] = useState<Module | null>(null);
-  const [editedDayAssessment, setEditedDayAssessment] = useState<string>(''); // State for editing day assessment title
-  const [editedDayAssessmentLink, setEditedDayAssessmentLink] = useState<string>(''); // State for editing day assessment link
   const [users, setUsers] = useState<User[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [newDayAssessment, setNewDayAssessment] = useState<string>(''); // New state for day assessment title
-  const [newDayAssessmentLink, setNewDayAssessmentLink] = useState<string>(''); // New state for day assessment link
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
   const [progress, setProgress] = useState<UserProgress[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('overview'); // New state for view mode
@@ -188,7 +184,7 @@ const AdminDashboard: React.FC = () => {
   const addNewVideoField = () => {
     setNewModule({
       ...newModule,
-      videos: [...newModule.videos, { title: '', url: '', duration: 0, resourcesUrl: '', notesUrl: '' }],
+      videos: [...newModule.videos, { title: '', url: '', duration: 0, notesUrl: [''] }], // Initialize with empty notesUrl array
     });
   };
 
@@ -212,6 +208,13 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
+    // Validate assessments
+    const invalidAssessments = newModule.assessments?.filter(assessment => !assessment.title.trim() || !assessment.link.trim());
+    if (newModule.assessments && invalidAssessments && invalidAssessments.length > 0) {
+      alert('Please ensure all assessments have a title and a link.');
+      return;
+    }
+
     try {
       // Ensure week exists, create if it doesn't
       const weekExists = await ensureWeekExists(selectedCourseIdForModules, selectedWeek);
@@ -220,30 +223,15 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // Ensure day exists, create if it doesn't (with assessment data if provided)
+      // Ensure day exists, create if it doesn't
       const dayExists = await ensureDayExists(
-        selectedCourseIdForModules, 
-        selectedWeek, 
-        selectedDay,
-        newDayAssessment.trim() || undefined,
-        newDayAssessmentLink.trim() || undefined
+        selectedCourseIdForModules,
+        selectedWeek,
+        selectedDay
       );
       if (!dayExists) {
         alert('Failed to create or find day.');
         return;
-      }
-
-      // If day exists but assessment fields are provided and not empty, update the day
-      if (newDayAssessment.trim() || newDayAssessmentLink.trim()) {
-        try {
-          await api.put(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${selectedWeek}/days/${selectedDay}`, {
-            assessment: newDayAssessment.trim() || '',
-            assessmentLink: newDayAssessmentLink.trim() || '',
-          });
-        } catch (updateErr) {
-          console.error('Failed to update day assessment:', updateErr);
-          // Continue anyway - not critical
-        }
       }
 
       // Convert minutes to seconds before sending
@@ -261,10 +249,7 @@ const AdminDashboard: React.FC = () => {
         moduleToSubmit
       );
       alert('Module created successfully');
-      setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0 }] }); // Reset form
-      // Reset assessment fields
-      setNewDayAssessment('');
-      setNewDayAssessmentLink('');
+      setNewModule({ title: '', videos: [{ title: '', url: '', duration: 0, notesUrl: [''] }], assessments: [{ title: '', link: '' }] }); // Reset form
       // Keep week and day selected for next module
       fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
     } catch (err) {
@@ -280,18 +265,10 @@ const AdminDashboard: React.FC = () => {
       videos: module.videos.map(video => ({
         ...video,
         duration: video.duration ? secondsToMinutes(video.duration) : 0, // Convert seconds to minutes for display
-        resourcesUrl: video.resourcesUrl || '',
-        notesUrl: video.notesUrl || '',
-      }))
+        notesUrl: video.notesUrl || [''], // Ensure notesUrl is an array
+      })),
+      assessments: module.assessments && module.assessments.length > 0 ? module.assessments : [{ title: '', link: '' }], // Ensure assessments is an array
     });
-
-    // Find the corresponding day to get assessment details
-    const course = courses.find(c => c._id === selectedCourseIdForModules);
-    const week = course?.weeks.find(w => w.weekNumber === weekNumber);
-    const day = week?.days.find(d => d.dayNumber === dayNumber);
-
-    setEditedDayAssessment(day?.assessment || '');
-    setEditedDayAssessmentLink(day?.assessmentLink || '');
   };
 
   const handleEditedModuleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -320,7 +297,7 @@ const AdminDashboard: React.FC = () => {
     if (editedModule) {
       setEditedModule({
         ...editedModule,
-        videos: [...editedModule.videos, { title: '', url: '', duration: 0, resourcesUrl: '', notesUrl: '' }],
+        videos: [...editedModule.videos, { title: '', url: '', duration: 0, notesUrl: [''] }], // Initialize with empty notesUrl array
       });
     }
   };
@@ -340,6 +317,13 @@ const AdminDashboard: React.FC = () => {
         alert('Please ensure all videos have a video duration greater than zero (in minutes).');
         return;
       }
+
+      // Validate assessments
+      const invalidAssessments = editedModule.assessments?.filter(assessment => !assessment.title.trim() || !assessment.link.trim());
+      if (editedModule.assessments && invalidAssessments && invalidAssessments.length > 0) {
+        alert('Please ensure all assessments have a title and a link.');
+        return;
+      }
       
       try {
         // Convert minutes to seconds before sending
@@ -354,23 +338,15 @@ const AdminDashboard: React.FC = () => {
         // Update the module
         await api.put<Module>(`/api/admin/modules/${editedModule._id}`, moduleToUpdate);
 
-        // Update the day's assessment fields
-        await api.put(`/api/admin/courses/${selectedCourseIdForModules}/weeks/${selectedWeek}/days/${selectedDay}`, {
-          assessment: editedDayAssessment,
-          assessmentLink: editedDayAssessmentLink,
-        });
-
-        alert('Module and Day updated successfully');
+        alert('Module updated successfully');
         setEditingModuleId(null);
         setEditedModule(null);
-        setEditedDayAssessment('');
-        setEditedDayAssessmentLink('');
         if (selectedCourseIdForModules) {
           fetchCourseDetails(selectedCourseIdForModules); // Refresh course details
         }
       } catch (err) {
-        console.error('Failed to update module or day:', err);
-        alert('Failed to update module or day');
+        console.error('Failed to update module:', err);
+        alert('Failed to update module');
       }
     }
   };
@@ -418,7 +394,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Helper function to ensure day exists, create if it doesn't
-  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number, assessment?: string, assessmentLink?: string): Promise<boolean> => {
+  const ensureDayExists = async (courseId: string, weekNumber: number, dayNumber: number): Promise<boolean> => {
     try {
       // First ensure week exists
       const weekOk = await ensureWeekExists(courseId, weekNumber);
@@ -437,7 +413,7 @@ const AdminDashboard: React.FC = () => {
       const dayExists = week.days.some(d => d.dayNumber === dayNumber);
       if (!dayExists) {
         try {
-          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber, assessment, assessmentLink });
+          await api.post(`/api/admin/courses/${courseId}/weeks/${weekNumber}/days`, { dayNumber });
         } catch (error) {
           // If day already exists (400 error), that's fine
           if (axios.isAxiosError(error) && error.response?.status === 400) {
@@ -907,98 +883,93 @@ const AdminDashboard: React.FC = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="dayAssessment">Assessment Title (Optional)</Label>
-                    <Input
-                      id="dayAssessment"
-                      type="text"
-                      value={newDayAssessment}
-                      onChange={(e) => setNewDayAssessment(e.target.value)}
-                      placeholder="e.g., Week 1 Day 1 Quiz"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dayAssessmentLink">Assessment Link (Optional)</Label>
-                    <Input
-                      id="dayAssessmentLink"
-                      type="url"
-                      value={newDayAssessmentLink}
-                      onChange={(e) => setNewDayAssessmentLink(e.target.value)}
-                      placeholder="e.g., https://forms.gle/..."
-                    />
-                  </div>
 
                   <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
-                  {newModule.videos.map((video, index) => (
-                    <Card key={index} className="mb-4 p-4 text-foreground">
+                  {newModule.videos.map((video, videoIndex) => (
+                    <Card key={videoIndex} className="mb-4 p-4 text-foreground">
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor={`newVideoTitle-${index}`}>Video Title</Label>
+                            <Label htmlFor={`newVideoTitle-${videoIndex}`}>Video Title</Label>
                             <Input
-                              id={`newVideoTitle-${index}`}
+                              id={`newVideoTitle-${videoIndex}`}
                               type="text"
                               name="title"
                               value={video.title}
-                              onChange={(e) => handleNewVideoChange(index, e)}
+                              onChange={(e) => handleNewVideoChange(videoIndex, e)}
                               required
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`newVideoUrl-${index}`}>Video URL</Label>
+                            <Label htmlFor={`newVideoUrl-${videoIndex}`}>Video URL</Label>
                             <Input
-                              id={`newVideoUrl-${index}`}
+                              id={`newVideoUrl-${videoIndex}`}
                               type="url"
                               name="url"
                               value={video.url}
-                              onChange={(e) => handleNewVideoChange(index, e)}
+                              onChange={(e) => handleNewVideoChange(videoIndex, e)}
                               required
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`newResourcesUrl-${index}`}>
-                              Resources URL (Optional)
-                            </Label>
-                            <Input
-                              id={`newResourcesUrl-${index}`}
-                              type="url"
-                              name="resourcesUrl"
-                              value={video.resourcesUrl || ''}
-                              onChange={(e) => handleNewVideoChange(index, e)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`newNotesUrl-${index}`}>
-                              Notes URL (Optional)
-                            </Label>
-                            <Input
-                              id={`newNotesUrl-${index}`}
-                              type="url"
-                              name="notesUrl"
-                              value={video.notesUrl || ''}
-                              onChange={(e) => handleNewVideoChange(index, e)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`newDuration-${index}`}>
+                            <Label htmlFor={`newDuration-${videoIndex}`}>
                               Video Duration (minutes) *
                             </Label>
                             <Input
-                              id={`newDuration-${index}`}
+                              id={`newDuration-${videoIndex}`}
                               type="number"
                               name="duration"
                               min="1"
                               step="0.1"
                               value={video.duration || ''}
-                              onChange={(e) => handleNewVideoChange(index, e)}
+                              onChange={(e) => handleNewVideoChange(videoIndex, e)}
                               required
                             />
                           </div>
                         </div>
+                        <div className="mt-4 space-y-2">
+                          <Label>Notes URLs (Optional)</Label>
+                          {video.notesUrl?.map((note, noteIndex) => (
+                            <div key={noteIndex} className="flex items-center gap-2">
+                              <Input
+                                type="url"
+                                value={note}
+                                onChange={(e) => {
+                                  const updatedNotes = [...(video.notesUrl || [])];
+                                  updatedNotes[noteIndex] = e.target.value;
+                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
+                                }}
+                                placeholder={`Note URL ${noteIndex + 1}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const updatedNotes = (video.notesUrl || []).filter((_, i) => i !== noteIndex);
+                                  handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
+                                }}
+                              >
+                                <MinusCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const updatedNotes = [...(video.notesUrl || []), ''];
+                              handleNewVideoChange(videoIndex, { target: { name: 'notesUrl', value: updatedNotes } } as React.ChangeEvent<HTMLInputElement>);
+                            }}
+                          >
+                            <PlusCircle className="w-4 h-4 mr-2" /> Add Note URL
+                          </Button>
+                        </div>
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={() => removeNewVideoField(index)}
+                          onClick={() => removeNewVideoField(videoIndex)}
                           className="mt-4"
                         >
                           Remove Video
@@ -1007,8 +978,59 @@ const AdminDashboard: React.FC = () => {
                     </Card>
                   ))}
                   <Button type="button" onClick={addNewVideoField} className="mr-2">
-                    Add Video
+                    <PlusCircle className="w-4 h-4 mr-2" /> Add Video
                   </Button>
+
+                  <h3 className="text-md font-semibold mt-6 mb-2">Assessments</h3>
+                  {newModule.assessments?.map((assessment, assessmentIndex) => (
+                    <Card key={assessmentIndex} className="mb-4 p-4 text-foreground">
+                      <CardContent>
+                        <div>
+                          <Label htmlFor={`newAssessmentTitle-${assessmentIndex}`}>Assessment Title</Label>
+                          <Input
+                            id={`newAssessmentTitle-${assessmentIndex}`}
+                            type="text"
+                            value={assessment.title}
+                            onChange={(e) => {
+                              const updatedAssessments = [...(newModule.assessments || [])];
+                              updatedAssessments[assessmentIndex] = { ...updatedAssessments[assessmentIndex], title: e.target.value };
+                              setNewModule({ ...newModule, assessments: updatedAssessments });
+                            }}
+                            required
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <Label htmlFor={`newAssessmentLink-${assessmentIndex}`}>Assessment Link</Label>
+                          <Input
+                            id={`newAssessmentLink-${assessmentIndex}`}
+                            type="url"
+                            value={assessment.link}
+                            onChange={(e) => {
+                              const updatedAssessments = [...(newModule.assessments || [])];
+                              updatedAssessments[assessmentIndex] = { ...updatedAssessments[assessmentIndex], link: e.target.value };
+                              setNewModule({ ...newModule, assessments: updatedAssessments });
+                            }}
+                            required
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => {
+                            const updatedAssessments = (newModule.assessments || []).filter((_, i) => i !== assessmentIndex);
+                            setNewModule({ ...newModule, assessments: updatedAssessments });
+                          }}
+                          className="mt-4"
+                        >
+                          Remove Assessment
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button type="button" onClick={() => setNewModule({ ...newModule, assessments: [...(newModule.assessments || []), { title: '', link: '' }] })} className="mr-2">
+                    <PlusCircle className="w-4 h-4 mr-2" /> Add Assessment
+                  </Button>
+
                   <Button type="submit" disabled={selectedWeek === null || selectedDay === null}>Create Module</Button>
                 </form>
               </div>

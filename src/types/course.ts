@@ -9,8 +9,7 @@ export interface Lesson {
   description: string;
   videoUrl: string;
   duration: number;
-  resources: Resource[];
-  notes: Resource[];
+  notes: string[]; // Changed to string[]
 }
 
 export interface Module {
@@ -57,8 +56,29 @@ export interface Video {
   title: string;
   url: string;
   duration?: number; // Add duration
-  resourcesUrl?: string;
-  notesUrl?: string;
+  notesUrl?: string[]; // Changed to an array of strings
+}
+
+export interface Assessment { // New interface for assessments
+  title: string;
+  link: string;
+}
+
+export interface Module {
+  _id?: string;
+  id?: string;
+  title: string;
+  videos: Video[];
+  lessons?: Lesson[];
+  assessments?: Assessment[]; // New field for multiple assessments
+}
+
+export interface Day {
+  _id?: string; // Add _id to Day interface
+  dayNumber: number;
+  modules: Module[];
+  assessment?: string; // Keep for now, will remove if fully replaced by module assessments
+  assessmentLink?: string; // Keep for now, will remove if fully replaced by module assessments
 }
 
 export interface Course {

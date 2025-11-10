@@ -119,8 +119,7 @@ const CoursePlayer = () => {
           description: '',
           videoUrl: selectedVideo.url,
           duration: selectedVideo.duration || 0,
-          resources: selectedVideo.resourcesUrl ? [{ title: 'Resources', url: selectedVideo.resourcesUrl }] : [],
-          notes: selectedVideo.notesUrl ? [{ title: 'Notes', url: selectedVideo.notesUrl }] : [],
+          notes: selectedVideo.notesUrl || [], // notes is now string[]
         });
       }
     }
@@ -137,8 +136,7 @@ const CoursePlayer = () => {
               description: '',
               videoUrl: video.url,
               duration: video.duration || 0,
-              resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
-              notes: video.notesUrl ? [{ title: 'Notes', url: video.notesUrl }] : [],
+              notes: video.notesUrl || [], // notes is now string[]
             }))
           )
         )
@@ -355,8 +353,7 @@ const CoursePlayer = () => {
                     )}
 
                     <ResourcesSection
-                      resources={currentLesson.resources}
-                      notes={currentLesson.notes}
+                      notes={currentLesson.notes} // Pass notes directly as string[]
                       lessonTitle={currentLesson.title}
                     />
                   </div>
