@@ -10,16 +10,19 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
+} from '@/components/ui/accordion'; // Re-import Accordion components
 import { PlayCircle, FileText } from 'lucide-react';
 import { formatDurationMinutes } from '@/utils/duration';
 import Header from '../components/Header';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Import Tabs components
 
 const CourseDescription: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [resumeLink, setResumeLink] = useState<string | null>(null);
+  const [activeWeek, setActiveWeek] = useState<string>(''); // State to manage active week tab
 
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
@@ -27,6 +30,10 @@ const CourseDescription: React.FC = () => {
         try {
           const courseResponse = await api.get<Course>(`/api/courses/${courseId}`);
           setCourse(courseResponse);
+          // Set the first week as active by default
+          if (courseResponse.weeks && courseResponse.weeks.length > 0) {
+            setActiveWeek(`week-${courseResponse.weeks[0].weekNumber}`);
+          }
 
           let progressResponse: UserProgress[] = [];
           try {
@@ -144,83 +151,86 @@ const CourseDescription: React.FC = () => {
           </div>
         </div>
         <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Course content</h2>
-          <Accordion type="multiple" className="w-full">
-            {course.weeks && course.weeks.length > 0 ? (
-              course.weeks.map((week, weekIndex) => (
-                <AccordionItem key={week.weekNumber || weekIndex} value={`week-${week.weekNumber || weekIndex}`} className="mb-4 rounded-lg shadow-lg bg-gray-50 dark:bg-gray-800">
-                  <AccordionTrigger className="text-xl font-bold p-4">
+          <h2 className="text-3xl font-bold mb-6 text-foreground">Course Content</h2>
+          {course.weeks && course.weeks.length > 0 ? (
+            <Tabs value={activeWeek} onValueChange={setActiveWeek} className="w-full">
+              <TabsList className="grid w-full grid-flow-col auto-cols-max justify-start overflow-x-auto gap-2 mb-4">
+                {course.weeks.map((week) => (
+                  <TabsTrigger key={`week-${week.weekNumber}`} value={`week-${week.weekNumber}`} className="min-w-[120px] py-2 px-4 rounded-lg shadow-md">
                     Week {week.weekNumber}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <Accordion type="multiple" className="w-full pl-4">
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {course.weeks.map((week) => (
+                <TabsContent key={`week-${week.weekNumber}`} value={`week-${week.weekNumber}`}>
+                  <Card className="rounded-lg shadow-lg bg-card text-card-foreground">
+                    <CardHeader className="p-4 border-b border-border">
+                      <CardTitle className="text-xl font-bold">Week {week.weekNumber} Content</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
                       {week.days && week.days.length > 0 ? (
-                        week.days.map((day, dayIndex) => (
-                          <AccordionItem key={day.dayNumber || dayIndex} value={`day-${week.weekNumber}-${day.dayNumber || dayIndex}`} className="mb-2 rounded-lg shadow-sm bg-white dark:bg-gray-700">
-                            <AccordionTrigger className="text-lg font-semibold p-3">
-                              Day {day.dayNumber}
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              {day.modules && day.modules.length > 0 ? (
-                                day.modules.map((module, moduleIndex) => (
-                                  <Accordion type="single" collapsible className="w-full pl-4" key={module._id || module.id || moduleIndex}>
-                                    <AccordionItem value={`module-${module._id || module.id || moduleIndex}`} className="mb-1 rounded-lg shadow-xs bg-gray-100 dark:bg-gray-600">
-                                      <AccordionTrigger className="text-md font-medium p-2">
-                                        {module.title}
-                                      </AccordionTrigger>
-                                      <AccordionContent>
-                                        {module.videos && module.videos.length > 0 ? (
-                                          module.videos.map((video, videoIndex) => (
-                                            <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-8 pr-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
-                                              <div className="flex items-center">
-                                                <PlayCircle className="h-4 w-4 mr-2 text-primary" />
-                                                <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
-                                                  <span>{video.title}</span>
-                                                </Link>
-                                              </div>
-                                              <span className="text-xs text-gray-500">
-                                                {formatDurationMinutes(video.duration || 0)}
-                                              </span>
+                        <Accordion type="multiple" className="w-full">
+                          {week.days.map((day, dayIndex) => (
+                            <AccordionItem key={day.dayNumber || dayIndex} value={`day-${week.weekNumber}-${day.dayNumber || dayIndex}`} className="mb-2 rounded-lg shadow-sm bg-white dark:bg-gray-700">
+                              <AccordionTrigger className="text-lg font-semibold p-3">
+                                Day {day.dayNumber}
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                {day.modules && day.modules.length > 0 ? (
+                                  day.modules.map((module, moduleIndex) => (
+                                    <div key={module._id || module.id || moduleIndex} className="space-y-1 pl-4">
+                                      <h4 className="text-md font-medium text-muted-foreground">{module.title}</h4>
+                                      {module.videos && module.videos.length > 0 ? (
+                                        module.videos.map((video, videoIndex) => (
+                                          <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-4 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
+                                            <div className="flex items-center">
+                                              <PlayCircle className="h-4 w-4 mr-2 text-primary" />
+                                              <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
+                                                <span>{video.title}</span>
+                                              </Link>
                                             </div>
-                                          ))
-                                        ) : (
-                                          <p className="p-4 text-sm text-muted-foreground">No videos in this module.</p>
-                                        )}
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  </Accordion>
-                                ))
-                              ) : (
-                                <p className="p-4 text-sm text-muted-foreground">No modules for this day.</p>
-                              )}
-                              {(day.assessment && day.assessment.trim()) && (
-                                <div className="flex items-center justify-between py-2 pl-8 pr-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
-                                  <div className="flex items-center">
-                                    <FileText className="h-4 w-4 mr-2 text-secondary-foreground" />
-                                    {day.assessmentLink && day.assessmentLink.trim() ? (
-                                      <a href={day.assessmentLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm text-blue-500">
-                                        <span>Assessment: {day.assessment}</span>
-                                      </a>
-                                    ) : (
-                                      <span className="text-sm">Assessment: {day.assessment}</span>
-                                    )}
+                                            <span className="text-xs text-gray-500">
+                                              {formatDurationMinutes(video.duration || 0)}
+                                            </span>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="p-2 text-sm text-muted-foreground">No videos in this module.</p>
+                                      )}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="p-2 text-sm text-muted-foreground">No modules for this day.</p>
+                                )}
+                                {(day.assessment && day.assessment.trim()) && (
+                                  <div className="flex items-center justify-between py-2 pl-4 pr-2 border-t border-border mt-2 pt-2">
+                                    <div className="flex items-center">
+                                      <FileText className="h-4 w-4 mr-2 text-secondary-foreground" />
+                                      {day.assessmentLink && day.assessmentLink.trim() ? (
+                                        <a href={day.assessmentLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm text-blue-500">
+                                          <span>Assessment: {day.assessment}</span>
+                                        </a>
+                                      ) : (
+                                        <span className="text-sm">Assessment: {day.assessment}</span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))
+                                )}
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
                       ) : (
                         <p className="p-4 text-sm text-muted-foreground">No days in this week.</p>
                       )}
-                    </Accordion>
-                  </AccordionContent>
-                </AccordionItem>
-              ))
-            ) : (
-              <p className="p-4 text-sm text-muted-foreground">No weeks in this course.</p>
-            )}
-          </Accordion>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+          ) : (
+            <p className="p-4 text-sm text-muted-foreground">No weeks in this course.</p>
+          )}
         </div>
       </div>
     </>
