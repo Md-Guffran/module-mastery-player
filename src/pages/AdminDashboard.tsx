@@ -560,16 +560,16 @@ const AdminDashboard: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="container mx-auto p-4 pt-24">
-        <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+      <div className="container mx-auto p-2 sm:p-4 pt-20 sm:pt-24">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 px-2 sm:px-0">Admin Dashboard</h1>
 
-      <div className="flex space-x-4 mb-8 overflow-x-auto">
-        <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'}>Overview</Button>
-        <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'}>Users</Button>
-        <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'}>Daily Activity</Button>
-        <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'}>Student Progress</Button>
-        <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'}>Manage Course Content</Button>
-        <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'}>Create Course</Button>
+      <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 sm:mb-8 px-2 sm:px-0 overflow-x-auto pb-2">
+        <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Overview</Button>
+        <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Users</Button>
+        <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Daily Activity</Button>
+        <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Student Progress</Button>
+        <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Manage Course Content</Button>
+        <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Create Course</Button>
       </div>
 
       {viewMode === 'overview' && (
@@ -615,21 +615,21 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {viewMode === 'users' && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">All Users</h2>
+        <div className="mt-4 sm:mt-8 px-2 sm:px-0">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">All Users</h2>
           <div className="grid grid-cols-1 gap-4">
             {users.length > 0 ? (
               users.map((user) => (
                 <Card key={user._id} className="text-foreground">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{user.username}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm sm:text-base truncate">{user.username}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <Button onClick={() => {
                       setSelectedStudentId(user._id);
                       setViewMode('student-progress');
-                    }}>
+                    }} className="w-full sm:w-auto text-xs sm:text-sm">
                       View Progress
                     </Button>
                   </CardContent>
@@ -643,17 +643,17 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {viewMode === 'activity' && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Daily Activity</h2>
+        <div className="mt-4 sm:mt-8 px-2 sm:px-0">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">Daily Activity</h2>
           <div className="grid grid-cols-1 gap-4">
             {dailyActivity.length > 0 ? (
               dailyActivity.map((activity, index) => (
                 <Card key={index} className="text-foreground">
-                  <CardContent className="p-4">
-                    <p className="font-semibold">{activity.username}</p>
-                    <p className="text-sm text-muted-foreground">Email: {activity.email}</p>
-                    <p className="text-sm text-muted-foreground">Login Time: {activity.loginTime}</p>
-                    <p className="text-sm text-muted-foreground">Logout Time: {activity.logoutTime}</p>
+                  <CardContent className="p-3 sm:p-4">
+                    <p className="font-semibold text-sm sm:text-base">{activity.username}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Email: {activity.email}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Login Time: {activity.loginTime}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Logout Time: {activity.logoutTime}</p>
                   </CardContent>
                 </Card>
               ))
@@ -665,27 +665,29 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {viewMode === 'modules' && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Manage Course Content</h2>
+        <div className="mt-4 sm:mt-8 px-2 sm:px-0">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">Manage Course Content</h2>
           {/* Course selection for module management */}
-          <div className="mb-4">
-            <Label htmlFor="courseSelect" className="mr-2 dark:text-gray-200">Select Course:</Label>
-            <select
-              id="courseSelect"
-              value={selectedCourseIdForModules || ''}
-              onChange={(e) => handleSelectCourseForModules(e.target.value)}
-              className="p-2 border rounded
-               bg-white text-gray-900 border-gray-300
-               focus:ring-indigo-500 focus:border-indigo-500
-               dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
-            >
-              <option value="" disabled>--Select a Course--</option>
-              {courses.map(course => (
-                <option key={course._id} value={course._id}>{course.title}</option>
-              ))}
-            </select>
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+              <Label htmlFor="courseSelect" className="text-sm sm:text-base dark:text-gray-200 whitespace-nowrap">Select Course:</Label>
+              <select
+                id="courseSelect"
+                value={selectedCourseIdForModules || ''}
+                onChange={(e) => handleSelectCourseForModules(e.target.value)}
+                className="p-2 border rounded flex-1 min-w-0
+                 bg-white text-gray-900 border-gray-300 text-sm sm:text-base
+                 focus:ring-indigo-500 focus:border-indigo-500
+                 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
+              >
+                <option value="" disabled>--Select a Course--</option>
+                {courses.map(course => (
+                  <option key={course._id} value={course._id}>{course.title}</option>
+                ))}
+              </select>
+            </div>
             {selectedCourseIdForModules && (
-              <Button variant="outline" size="sm" onClick={() => setViewMode('manage-course')} className="ml-4">
+              <Button variant="outline" size="sm" onClick={() => setViewMode('manage-course')} className="text-xs sm:text-sm whitespace-nowrap">
                 Manage Selected Course
               </Button>
             )}
@@ -693,28 +695,28 @@ const AdminDashboard: React.FC = () => {
 
           {selectedCourseIdForModules && (
             <>
-              <h3 className="text-md font-semibold mb-2">Content for: {currentCourse?.title}</h3>
+              <h3 className="text-sm sm:text-md font-semibold mb-2 break-words">Content for: {currentCourse?.title}</h3>
 
               {sortedWeeks.length > 0 ? (
                 sortedWeeks.map(weekNumber => {
                   const weekContent = groupedContentByWeek[weekNumber];
                   const sortedDays = Object.keys(weekContent).map(Number).sort((a, b) => a - b);
                   return (
-                    <div key={weekNumber} className="mb-8 border rounded-lg shadow-sm bg-gray-100 dark:bg-gray-900 p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Week {weekNumber}</h4>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteWeek(weekNumber)}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete Week
+                    <div key={weekNumber} className="mb-6 sm:mb-8 border rounded-lg shadow-sm bg-gray-100 dark:bg-gray-900 p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
+                        <h4 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">Week {weekNumber}</h4>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteWeek(weekNumber)} className="w-full sm:w-auto text-xs sm:text-sm">
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Delete Week
                         </Button>
                       </div>
                       {sortedDays.map(dayNumber => {
                         const sortedModulesForDay = weekContent[dayNumber].sort((a, b) => (a.title || '').localeCompare(b.title || '')); // Sort modules by title
                         return (
-                          <div key={`${weekNumber}-${dayNumber}`} className="mb-6 border rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800 p-4">
-                            <div className="flex justify-between items-center mb-4">
-                              <h5 className="text-xl font-bold text-gray-800 dark:text-gray-100">Day {dayNumber}</h5>
-                              <Button variant="destructive" size="sm" onClick={() => handleDeleteDay(weekNumber, dayNumber)}>
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete Day
+                          <div key={`${weekNumber}-${dayNumber}`} className="mb-4 sm:mb-6 border rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800 p-3 sm:p-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
+                              <h5 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">Day {dayNumber}</h5>
+                              <Button variant="destructive" size="sm" onClick={() => handleDeleteDay(weekNumber, dayNumber)} className="w-full sm:w-auto text-xs sm:text-sm">
+                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Delete Day
                               </Button>
                             </div>
                             <Accordion type="single" collapsible className="w-full">
@@ -738,12 +740,12 @@ const AdminDashboard: React.FC = () => {
                                   </AccordionTrigger>
                                   <AccordionContent>
                                     {editingModuleId === (moduleItem._id || moduleItem.id) ? (
-                                      <div className="space-y-4 p-4">
-                                        <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
+                                      <div className="space-y-4 p-2 sm:p-4">
+                                        <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Videos</h3>
                                         {editedModule?.videos.map((video, index) => (
-                                          <Card key={index} className="mb-4 p-4 text-foreground">
+                                          <Card key={index} className="mb-4 p-3 sm:p-4 text-foreground">
                                             <CardContent>
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                                                 <div>
                                                   <Label htmlFor={`editedVideoTitle-${index}`}>Video Title</Label>
                                                   <Input
@@ -848,25 +850,25 @@ const AdminDashboard: React.FC = () => {
                                             </CardContent>
                                           </Card>
                                         ))}
-                                        <Button type="button" onClick={addEditedVideoField} className="mr-2">
-                                          <PlusCircle className="w-4 h-4 mr-2" /> Add Video
-                                        </Button>
-
-
-                                        <Button onClick={handleUpdateModule} className="mr-2">
-                                          <Save className="w-4 h-4 mr-2" /> Save Changes
-                                        </Button>
-                                        <Button variant="outline" onClick={() => setEditingModuleId(null)}>
-                                          Cancel
-                                        </Button>
+                                        <div className="flex flex-wrap gap-2">
+                                          <Button type="button" onClick={addEditedVideoField} className="text-xs sm:text-sm">
+                                            <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Video
+                                          </Button>
+                                          <Button onClick={handleUpdateModule} className="text-xs sm:text-sm">
+                                            <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Save Changes
+                                          </Button>
+                                          <Button variant="outline" onClick={() => setEditingModuleId(null)} className="text-xs sm:text-sm">
+                                            Cancel
+                                          </Button>
+                                        </div>
                                       </div>
                                     ) : (
-                                      <div className="flex justify-end space-x-2 p-4">
-                                        <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem, weekNumber, dayNumber)}>
-                                          <Edit className="w-4 h-4 mr-2" /> Edit
+                                      <div className="flex flex-col sm:flex-row justify-end gap-2 p-2 sm:p-4">
+                                        <Button variant="outline" size="sm" onClick={() => handleEditModule(moduleItem, weekNumber, dayNumber)} className="w-full sm:w-auto text-xs sm:text-sm">
+                                          <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Edit
                                         </Button>
-                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')}>
-                                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteModule(moduleItem._id || moduleItem.id || '')} className="w-full sm:w-auto text-xs sm:text-sm">
+                                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Delete
                                         </Button>
                                       </div>
                                     )}
@@ -892,8 +894,8 @@ const AdminDashboard: React.FC = () => {
                 <p>No content found for this course. Add weeks, days, and modules.</p>
               )}
 
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold mb-4">Create New Module</h2>
+              <div className="mt-6 sm:mt-8">
+                <h2 className="text-base sm:text-lg font-semibold mb-4">Create New Module</h2>
                 <form onSubmit={handleSubmitNewModule} className="space-y-4">
                   <div>
                     <Label htmlFor="moduleTitle">Module Title</Label>
@@ -929,11 +931,11 @@ const AdminDashboard: React.FC = () => {
                     />
                   </div>
 
-                  <h3 className="text-md font-semibold mt-6 mb-2">Videos</h3>
+                  <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Videos</h3>
                   {newModule.videos.map((video, videoIndex) => (
-                    <Card key={videoIndex} className="mb-4 p-4 text-foreground">
+                    <Card key={videoIndex} className="mb-4 p-3 sm:p-4 text-foreground">
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                           <div>
                             <Label htmlFor={`newVideoTitle-${videoIndex}`}>Video Title</Label>
                             <Input
@@ -1018,11 +1020,13 @@ const AdminDashboard: React.FC = () => {
                       </CardContent>
                     </Card>
                   ))}
-                  <Button type="button" onClick={addNewVideoField} className="mr-2">
-                    <PlusCircle className="w-4 h-4 mr-2" /> Add Video
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" onClick={addNewVideoField} className="text-xs sm:text-sm">
+                      <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Video
+                    </Button>
+                  </div>
 
-                  <h3 className="text-md font-semibold mt-6 mb-2">Assessments</h3>
+                  <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Assessments</h3>
                   {newModule.assessments?.map((assessment, assessmentIndex) => (
                     <Card key={assessmentIndex} className="mb-4 p-4 text-foreground">
                       <CardContent>
@@ -1068,11 +1072,14 @@ const AdminDashboard: React.FC = () => {
                       </CardContent>
                     </Card>
                   ))}
-                  <Button type="button" onClick={() => setNewModule({ ...newModule, assessments: [...(newModule.assessments || []), { title: '', link: '' }] })} className="mr-2">
-                    <PlusCircle className="w-4 h-4 mr-2" /> Add Assessment
-                  </Button>
-
-                  <Button type="submit" disabled={selectedWeek === null || selectedDay === null}>Create Module</Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" onClick={() => setNewModule({ ...newModule, assessments: [...(newModule.assessments || []), { title: '', link: '' }] })} className="text-xs sm:text-sm">
+                      <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Assessment
+                    </Button>
+                    <Button type="submit" disabled={selectedWeek === null || selectedDay === null} className="text-xs sm:text-sm">
+                      Create Module
+                    </Button>
+                  </div>
                 </form>
               </div>
             </>
@@ -1081,8 +1088,8 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {viewMode === 'create-course' && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Create New Course</h2>
+        <div className="mt-4 sm:mt-8 px-2 sm:px-0">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">Create New Course</h2>
           <form onSubmit={handleCreateCourse} className="space-y-4">
             <div>
               <Label htmlFor="courseTitle">Course Title</Label>
@@ -1162,8 +1169,10 @@ const AdminDashboard: React.FC = () => {
                 required
               />
             </div>
-            <Button type="submit">Create Course</Button>
-            <Button type="button" variant="outline" onClick={() => setViewMode('overview')}>Cancel</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" className="text-xs sm:text-sm">Create Course</Button>
+              <Button type="button" variant="outline" onClick={() => setViewMode('overview')} className="text-xs sm:text-sm">Cancel</Button>
+            </div>
           </form>
         </div>
       )}
@@ -1180,13 +1189,13 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {(viewMode === 'progress' || viewMode === 'student-progress') && (
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">
+        <div className="mt-4 sm:mt-8 px-2 sm:px-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
+            <h2 className="text-base sm:text-lg font-semibold">
               {selectedStudentId ? `Progress for ${users.find(u => u._id === selectedStudentId)?.username || 'Unknown Student'}` : 'All Student Progress'}
             </h2>
             {selectedStudentId && (
-              <Button onClick={() => { setSelectedStudentId(null); setViewMode('progress'); }} variant="outline">
+              <Button onClick={() => { setSelectedStudentId(null); setViewMode('progress'); }} variant="outline" className="w-full sm:w-auto text-xs sm:text-sm">
                 Back to All Students
               </Button>
             )}
