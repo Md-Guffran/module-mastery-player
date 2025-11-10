@@ -4,7 +4,81 @@ import api from '../api';
 import { formatDurationMMSS } from '@/utils/duration';
 import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize } from 'lucide-react'; // Import icons
 
-declare const YT: any;
+interface YouTubePlayer {
+  cueVideoById: (videoId: string, startSeconds: number, suggestedQuality?: string) => void;
+  loadVideoById: (videoId: string, startSeconds: number, suggestedQuality?: string) => void;
+  cueVideoByUrl: (mediaContentUrl: string, startSeconds: number, suggestedQuality?: string) => void;
+  loadVideoByUrl: (mediaContentUrl: string, startSeconds: number, suggestedQuality?: string) => void;
+  cuePlaylist: (playlist: string | string[], index?: number, startSeconds?: number, suggestedQuality?: string) => void;
+  loadPlaylist: (playlist: string | string[], index?: number, startSeconds?: number, suggestedQuality?: string) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  stopVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  clearVideo: () => void;
+  getDuration: () => number;
+  getCurrentTime: () => number;
+  getPlaybackQuality: () => string;
+  setPlaybackQuality: (suggestedQuality: string) => void;
+  getAvailablePlaybackQualities: () => string[];
+  getPlaybackRate: () => number;
+  setPlaybackRate: (rate: number) => void;
+  getAvailablePlaybackRates: () => number[];
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
+  mute: () => void;
+  unMute: () => void;
+  isMuted: () => boolean;
+  getPlayerState: () => number;
+  getVideoUrl: () => string;
+  getVideoEmbedCode: () => string;
+  getVideoLoadedFraction: () => number;
+  getPlaylist: () => string[];
+  getPlaylistIndex: () => number;
+  addEventListener: (event: string, listener: (event: any) => void) => void;
+  removeEventListener: (event: string, listener: (event: any) => void) => void;
+  destroy: () => void;
+}
+
+interface YouTubePlayerEvent {
+  target: YouTubePlayer;
+  data: number;
+}
+
+interface YouTubePlayerOptions {
+  height: string;
+  width: string;
+  videoId: string;
+  playerVars: {
+    controls: number;
+    disablekb: number;
+    rel: number;
+    modestbranding: number;
+    origin: string;
+  };
+  events: {
+    onReady: (event: YouTubePlayerEvent) => void;
+    onStateChange: (event: YouTubePlayerEvent) => void;
+  };
+}
+
+interface YouTube {
+  Player: new (elementId: string, options: YouTubePlayerOptions) => YouTubePlayer;
+  PlayerState: {
+    ENDED: number;
+    PLAYING: number;
+    PAUSED: number;
+    BUFFERING: number;
+    CUED: number;
+  };
+}
+
+declare global {
+  interface Window {
+    YT: YouTube;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
 
 interface VideoPlayerProps {
   url: string;
@@ -22,18 +96,19 @@ interface VideoPlayerProps {
 }
 
 // Debounce helper
-function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
-  let timer: number;
-  return (...args: Parameters<F>) => {
+function debounce<T extends (...args: any[]) => void>(func: T, delay: number): (...args: Parameters<T>) => void {
+  let timer: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
     clearTimeout(timer);
-    timer = window.setTimeout(() => func(...args), delay);
+    timer = setTimeout(() => func(...args), delay);
   };
 }
 
 const getYouTubeVideoId = (url: string): string | null => {
   const regExp = /^.*(youtu.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
+  const extractedId = match && match[2].length === 11 ? match[2] : null;
+  return extractedId;
 };
 
 export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }: VideoPlayerProps) => {
@@ -77,7 +152,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      (window as any).onYouTubeIframeAPIReady = () => setIsApiReady(true);
+      window.onYouTubeIframeAPIReady = () => setIsApiReady(true);
     } else {
       setIsApiReady(true);
     }
@@ -99,7 +174,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   // ✅ Initialize player
   useEffect(() => {
     if (isApiReady && videoId && !playerRef.current) {
-      playerRef.current = new YT.Player(`youtube-player-${videoId}`, {
+      playerRef.current = new window.YT.Player(`youtube-player-${videoId}`, {
         height: '100%',
         width: '100%',
         videoId,
@@ -112,7 +187,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
           origin: window.location.origin,
         },
         events: {
-          onReady: (event: YT.PlayerEvent) => {
+          onReady: (event: YouTubePlayerEvent) => {
             setDuration(event.target.getDuration());
             event.target.setPlaybackRate(playbackRate);
             setIsPlayerReady(true);
@@ -121,7 +196,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
         },
       });
     }
-  }, [isApiReady, videoId]);
+  }, [isApiReady, videoId, playbackRate]); // Added playbackRate to dependencies
 
   // ✅ Resume from last progress
   useEffect(() => {
@@ -130,18 +205,18 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
     }
   }, [isPlayerReady, watchedSeconds]);
 
-  const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
-    if (event.data === YT.PlayerState.ENDED) {
+  const onPlayerStateChange = (event: YouTubePlayerEvent) => {
+    if (event.data === (window.YT.PlayerState.ENDED as number)) {
       const endTime = playerRef.current?.getDuration() || 0;
       saveProgress(lessonId, lessonTitle, endTime);
       onProgress({ lessonId, lessonTitle, completed: true, watched: true, watchedSeconds: endTime });
       setHasWatched(true);
       setIsPlaying(false); // Update play state
-    } else if (event.data === YT.PlayerState.PAUSED) {
+    } else if (event.data === (window.YT.PlayerState.PAUSED as number)) {
       const time = playerRef.current?.getCurrentTime() || 0;
       saveProgress(lessonId, lessonTitle, time);
       setIsPlaying(false); // Update play state
-    } else if (event.data === YT.PlayerState.PLAYING) {
+    } else if (event.data === (window.YT.PlayerState.PLAYING as number)) {
       setIsPlaying(true); // Update play state
     }
   };
