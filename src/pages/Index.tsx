@@ -165,21 +165,15 @@ const Index = () => {
               <Link to={`/course/${course._id}`} key={course._id}>
                 <Card className="h-full flex flex-col rounded-lg shadow-md overflow-hidden group relative">
                   <img src={course.imageUrl || "/images/genAI.png"} alt={course.title} className="w-full h-36 object-cover" />
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <CardTitle className="text-lg font-bold">{course.title}</CardTitle>
+                  <CardHeader className="p-4 pb-2 text-center">
+                    <div className="flex justify-center items-center mb-1">
+                      <CardTitle className="text-lg font-bold px-4 py-2">{course.title}</CardTitle>
                       {course.isBestseller && (
                         <span className="bg-yellow-200 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full">Bestseller</span>
                       )}
                     </div>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      {course.description}
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <div className="flex items-center text-xs text-muted-foreground mb-2">
-                      <span>{course.views || 0} views</span>
-                    </div>
                   </CardContent>
 
                   {/* Hover Overlay */}
