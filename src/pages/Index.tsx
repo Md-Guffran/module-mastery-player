@@ -134,7 +134,7 @@ const Index = () => {
             <h2 className="text-3xl font-bold mb-6 text-foreground">Continue Learning</h2>
             <Link to={`/course/${mostRecentCourse._id}`}>
               <Card className="flex flex-col md:flex-row rounded-lg shadow-lg overflow-hidden bg-card text-card-foreground">
-                <img src={mostRecentCourse.imageUrl || "/placeholder.svg"} alt={mostRecentCourse.title} className="w-full md:w-1/3 h-48 object-cover" />
+                <img src={mostRecentCourse.imageUrl || "/images/genAI.png"} alt={mostRecentCourse.title} className="w-full md:w-1/3 h-48 object-cover" />
                 <div className="p-6 flex flex-col justify-center flex-grow">
                   <p className="text-sm text-muted-foreground mb-1">COURSE</p>
                   <CardTitle className="text-3xl font-bold mb-2">{mostRecentCourse.title}</CardTitle>

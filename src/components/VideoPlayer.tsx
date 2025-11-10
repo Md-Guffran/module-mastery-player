@@ -129,6 +129,9 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
   const [isMuted, setIsMuted] = useState(false); // Add state for mute
   const [isFullScreen, setIsFullScreen] = useState(false); // Add state for full screen
 
+  // Ref to track if initial seek has happened for the current videoId
+  const hasSeekedOnLoad = useRef(false);
+
   // ✅ Debounced backend update
   const saveProgress = useCallback(
     debounce(async (lessonId: string, lessonTitle: string, time: number) => {
@@ -190,7 +193,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
         events: {
           onReady: (event: YouTubePlayerEvent) => {
             setDuration(event.target.getDuration());
-            event.target.setPlaybackRate(playbackRate);
+            // Initial playback rate will be set by the separate useEffect below
             setIsPlayerReady(true);
           },
           onStateChange: onPlayerStateChange,
@@ -205,14 +208,27 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
         setIsPlayerReady(false);
       }
     };
-  }, [isApiReady, videoId, playbackRate]); // Added playbackRate to dependencies
+  }, [isApiReady, videoId]); // Removed playbackRate from dependencies
+
+  // ✅ Update playback rate when state changes
+  useEffect(() => {
+    if (isPlayerReady && playerRef.current) {
+      playerRef.current.setPlaybackRate(playbackRate);
+    }
+  }, [playbackRate, isPlayerReady]);
+
+  // Reset hasSeekedOnLoad when videoId changes to allow seeking for new videos
+  useEffect(() => {
+    hasSeekedOnLoad.current = false;
+  }, [videoId]);
 
   // ✅ Resume from last progress
   useEffect(() => {
-    if (isPlayerReady && playerRef.current && watchedSeconds > 0) {
+    if (isPlayerReady && playerRef.current && watchedSeconds > 0 && !hasSeekedOnLoad.current) {
       playerRef.current.seekTo(watchedSeconds, true);
+      hasSeekedOnLoad.current = true;
     }
-  }, [isPlayerReady, watchedSeconds]);
+  }, [isPlayerReady, watchedSeconds, videoId]); // Added videoId to dependencies
 
   const onPlayerStateChange = (event: YouTubePlayerEvent) => {
     if (event.data === (window.YT.PlayerState.ENDED as number)) {
@@ -237,12 +253,17 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
 
     const updateProgress = () => {
       if (playerRef.current && isPlayerReady) {
-        const time = playerRef.current.getCurrentTime();
-        setCurrentTime((prev) => (Math.abs(prev - time) > 1 ? time : prev)); // update only if 1s diff
-        if (time - lastSaved > 2) {
-          setWatchedSeconds((prev) => Math.max(prev, time));
-          lastSaved = time;
-          saveProgress(lessonId, lessonTitle, time);
+        // Ensure getCurrentTime is a function before calling it
+        if (typeof playerRef.current.getCurrentTime === 'function') {
+          const time = playerRef.current.getCurrentTime();
+          setCurrentTime((prev) => (Math.abs(prev - time) > 1 ? time : prev)); // update only if 1s diff
+          if (time - lastSaved > 2) {
+            setWatchedSeconds((prev) => Math.max(prev, time));
+            lastSaved = time;
+            saveProgress(lessonId, lessonTitle, time);
+          }
+        } else {
+          console.warn("playerRef.current.getCurrentTime is not a function. Player might not be fully ready or in an unexpected state.");
         }
       }
       animationFrame = requestAnimationFrame(updateProgress);
