@@ -36,15 +36,7 @@ export const CourseSidebar = ({
     )
   );
 
-  const isLessonLocked = (lessonId: string): boolean => {
-    const currentLessonIndex = allLessonsFlat.findIndex(l => l.id === lessonId);
-    if (currentLessonIndex === -1 || currentLessonIndex === 0) {
-      return false; // First lesson is never locked
-    }
-
-    const prevLesson = allLessonsFlat[currentLessonIndex - 1];
-    return !progress[prevLesson.id]?.completed;
-  };
+  // Removed isLessonLocked function to unlock all lessons
 
   return (
     <div className="w-80 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
@@ -87,7 +79,6 @@ export const CourseSidebar = ({
                           };
                           const isCompleted = progress[lesson.id]?.completed;
                           const isCurrent = lesson.id === currentLessonId;
-                          const isLocked = isLessonLocked(lesson.id);
 
                           return (
                             <Button
@@ -97,15 +88,11 @@ export const CourseSidebar = ({
                                 'w-full justify-start gap-3 h-auto py-3 px-3 transition-all',
                                 isCurrent && 'bg-sidebar-accent',
                                 isCompleted && !isCurrent && 'text-success',
-                                isLocked && 'opacity-50 cursor-not-allowed'
                               )}
-                              onClick={() => !isLocked && onLessonSelect(lesson)}
-                              disabled={isLocked}
+                              onClick={() => onLessonSelect(lesson)}
                             >
                               <div className="shrink-0">
-                                {isLocked ? (
-                                  <Lock className="w-4 h-4 text-muted-foreground" />
-                                ) : isCompleted ? (
+                                {isCompleted ? (
                                   <CheckCircle2 className="w-4 h-4 text-success" />
                                 ) : (
                                   <Circle className="w-4 h-4 text-muted-foreground" />

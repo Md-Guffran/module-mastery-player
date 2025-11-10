@@ -159,7 +159,6 @@ const CoursePlayer = () => {
 
   const currentLessonIndex = currentLesson ? allLessons.findIndex(l => l.id === currentLesson.id) : -1;
   const nextLesson = currentLessonIndex !== -1 ? allLessons[currentLessonIndex + 1] : null;
-  const isNextLessonUnlocked = !nextLesson || (currentLesson && getProgress(currentLesson.id).completed);
 
   const totalLessons = allLessons.length;
   const completedLessons = Object.values(progress).filter(p => p.completed).length;
@@ -170,7 +169,7 @@ const CoursePlayer = () => {
   };
 
   const handleNextLesson = () => {
-    if (nextLesson && isNextLessonUnlocked) {
+    if (nextLesson) {
       setCurrentLesson(nextLesson);
     }
   };
@@ -346,20 +345,11 @@ const CoursePlayer = () => {
                       <div className="flex justify-end">
                         <Button
                           onClick={handleNextLesson}
-                          disabled={!isNextLessonUnlocked}
                           className="gap-2 rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow"
                           size="lg"
                         >
-                          {isNextLessonUnlocked ? (
-                            <>
-                              Next Lesson: {nextLesson.title}
-                              <ChevronRight className="w-4 h-4" />
-                            </>
-                          ) : (
-                            <>
-                              🔒 Complete current lesson to unlock
-                            </>
-                          )}
+                          Next Lesson: {nextLesson.title}
+                          <ChevronRight className="w-4 h-4" />
                         </Button>
                       </div>
                     )}
