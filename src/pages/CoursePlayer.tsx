@@ -304,7 +304,7 @@ const CoursePlayer = () => {
   return (
     <>
       <Header onMenuClick={() => setIsSidebarOpen(true)} isMobile={isMobile} /> {/* Pass onMenuClick and isMobile */}
-      <div className="flex h-screen bg-background overflow-hidden pt-16">
+      <div className="flex h-screen bg-background overflow-hidden pt-14 md:pt-16">
         {isMobile ? (
           <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetContent side="left" className="p-0 w-80">
@@ -341,12 +341,12 @@ const CoursePlayer = () => {
             percentage={totalProgressPercentage}
           />
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-6xl mx-auto space-y-6 bg-card p-6 rounded-lg shadow-lg">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6">
+          <div className="max-w-6xl mx-auto space-y-4 md:space-y-6 bg-card p-3 md:p-6 rounded-lg shadow-lg">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'lessons' | 'assessments')}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="lessons">Lessons</TabsTrigger>
-                <TabsTrigger value="assessments">Assessments</TabsTrigger>
+                <TabsTrigger value="lessons" className="text-xs md:text-sm">Lessons</TabsTrigger>
+                <TabsTrigger value="assessments" className="text-xs md:text-sm">Assessments</TabsTrigger>
               </TabsList>
               <TabsContent value="lessons">
                 <motion.div
@@ -355,18 +355,18 @@ const CoursePlayer = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <div>
-                      <h1 className="text-3xl font-bold text-foreground">
+                      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                         {currentLesson.title}
                       </h1>
                       {currentLesson.description && (
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-muted-foreground mt-2 text-sm md:text-base">
                           {currentLesson.description}
                         </p>
                       )}
                       {currentLesson.duration > 0 && (
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-muted-foreground text-xs md:text-sm mt-1">
                           Duration: {formatDurationMMSS(currentLesson.duration)}
                         </p>
                       )}
@@ -389,11 +389,12 @@ const CoursePlayer = () => {
                       <div className="flex justify-end">
                         <Button
                           onClick={handleNextLesson}
-                          className="gap-2 rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow"
+                          className="gap-2 rounded-lg shadow-md transition-all duration-300 ease-in-out hover:animate-hover-glow w-full md:w-auto text-xs md:text-sm"
                           size="lg"
                         >
-                          Next Lesson: {nextLesson.title}
-                          <ChevronRight className="w-4 h-4" />
+                          <span className="hidden sm:inline">Next Lesson: </span>
+                          <span className="truncate">{nextLesson.title}</span>
+                          <ChevronRight className="w-4 h-4 flex-shrink-0" />
                         </Button>
                       </div>
                     )}
@@ -406,12 +407,12 @@ const CoursePlayer = () => {
                 </motion.div>
               </TabsContent>
               <TabsContent value="assessments">
-                <h2 className="text-2xl font-bold text-foreground mb-4">Assessments</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3 md:mb-4">Assessments</h2>
                 {allAssessments.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {allAssessments.map((assessment, index) => (
-                      <div key={index} className="bg-secondary p-4 rounded-lg shadow-sm">
-                        <h3 className="text-xl font-semibold text-foreground">
+                      <div key={index} className="bg-secondary p-3 md:p-4 rounded-lg shadow-sm">
+                        <h3 className="text-base md:text-xl font-semibold text-foreground">
                           Week {assessment.weekNumber}, Day {assessment.dayNumber}
                           {assessment.moduleTitle && ` - ${assessment.moduleTitle}`}: {assessment.assessment}
                         </h3>
@@ -443,15 +444,15 @@ const CoursePlayer = () => {
                                       </p>
                                     )}
                                     {(userAssessment.status === 'pending' || userAssessment.status === 'failed') && (
-                                      <div className="flex items-center space-x-2 mt-2">
+                                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2">
                                         <Input
                                           type="url"
                                           placeholder="Submit your assessment link"
                                           value={submittedLink}
                                           onChange={(e) => setSubmittedLink(e.target.value)}
-                                          className="flex-1"
+                                          className="flex-1 text-sm"
                                         />
-                                        <Button onClick={() => handleSubmitAssessment(assessment._id!, assessment.assessment!, assessment.assessmentLink!)}>
+                                        <Button onClick={() => handleSubmitAssessment(assessment._id!, assessment.assessment!, assessment.assessmentLink!)} className="text-sm">
                                           Resubmit
                                         </Button>
                                       </div>
@@ -460,15 +461,15 @@ const CoursePlayer = () => {
                                 );
                               } else {
                                 return (
-                                  <div className="flex items-center space-x-2 mt-2">
+                                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2">
                                     <Input
                                       type="url"
                                       placeholder="Submit your assessment link"
                                       value={submittedLink}
                                       onChange={(e) => setSubmittedLink(e.target.value)}
-                                      className="flex-1"
+                                      className="flex-1 text-sm"
                                     />
-                                    <Button onClick={() => handleSubmitAssessment(assessment._id!, assessment.assessment!, assessment.assessmentLink!)}>
+                                    <Button onClick={() => handleSubmitAssessment(assessment._id!, assessment.assessment!, assessment.assessmentLink!)} className="text-sm">
                                       Submit
                                     </Button>
                                   </div>

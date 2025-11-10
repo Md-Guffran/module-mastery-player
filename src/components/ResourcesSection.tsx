@@ -52,31 +52,31 @@ export const ResourcesSection = ({ notes, lessonTitle }: ResourcesSectionProps) 
 
   return (
     <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="text-xl">Notes</CardTitle>
+      <CardHeader className="p-3 md:p-6">
+        <CardTitle className="text-lg md:text-xl">Notes</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 md:p-6 pt-0">
         {validNotes.length > 0 ? (
-          <div className="space-y-3 mt-4">
+          <div className="space-y-2 md:space-y-3 mt-2 md:mt-4">
             {validNotes.map((note, index) => (
               <a
                 key={index}
                 href={note.noteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
+                className="flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-lg border border-border hover:border-primary transition-colors bg-card hover:bg-accent/50"
               >
-                <div className="text-primary"><LinkIcon className="w-4 h-4" /></div>
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{note.noteTitle}</div>
+                <div className="text-primary flex-shrink-0"><LinkIcon className="w-4 h-4" /></div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-xs md:text-sm truncate">{note.noteTitle}</div>
                   <div className="text-xs text-muted-foreground truncate">{note.noteUrl}</div>
                 </div>
-                <Download className="w-4 h-4 text-muted-foreground" />
+                <Download className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </a>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-6 md:py-8 text-muted-foreground text-sm md:text-base">
             No notes available for this lesson
           </div>
         )}

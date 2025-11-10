@@ -350,31 +350,33 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
       <div id={`youtube-player-${videoId}`} className="absolute top-0 left-0 w-full h-full" />
       {/* Overlay to disable clicks on the top part of the iframe content (title/header) */}
       <div className="absolute top-0 left-0 w-full h-[80%] z-10" />
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+      <div className="absolute bottom-0 left-0 right-0 p-2 md:p-4 bg-gradient-to-t from-black/70 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-20">
         <div
           ref={progressBarRef}
-          className="w-full bg-white/20 h-1.5 cursor-pointer relative" // Added relative for scrubber
+          className="w-full bg-white/20 h-2 md:h-1.5 cursor-pointer relative" // Added relative for scrubber, larger on mobile
           onClick={handleProgressBarClick}
         >
           <div className="bg-red-600 h-full" style={{ width: `${(currentTime / duration) * 100}%` }} />
           {/* Scrubber */}
           <div
-            className="absolute -top-1 h-4 w-4 bg-red-600 rounded-full -ml-2"
+            className="absolute -top-1 h-5 w-5 md:h-4 md:w-4 bg-red-600 rounded-full -ml-2.5 md:-ml-2"
             style={{ left: `${(currentTime / duration) * 100}%` }}
           />
         </div>
-        <div className="flex justify-between items-center mt-2 text-white text-sm">
-          <div className="flex items-center space-x-2"> {/* Group play/seek buttons */}
-            <Button onClick={handlePlayPause} variant="ghost" size="icon" className="h-8 w-8">
+        <div className="flex items-center justify-between gap-2 md:gap-4 mt-2 text-white text-xs md:text-sm overflow-x-auto">
+          {/* Left side: Play, Rewind, Time */}
+          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+            <Button onClick={handlePlayPause} variant="ghost" size="icon" className="h-8 w-8 md:h-8 md:w-8 bg-blue-600 hover:bg-blue-700 text-white">
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <Button onClick={handleBackwardSeek} variant="ghost" size="icon" className="h-8 w-8">
+            <Button onClick={handleBackwardSeek} variant="ghost" size="icon" className="h-8 w-8 md:h-8 md:w-8">
               <RotateCcw className="h-4 w-4" />
             </Button>
-            <span>{formatDurationMMSS(currentTime)} / {formatDurationMMSS(duration)}</span>
+            <span className="text-xs md:text-sm whitespace-nowrap">{formatDurationMMSS(currentTime)} / {formatDurationMMSS(duration)}</span>
           </div>
 
-          <div className="flex items-center space-x-4"> {/* Group volume/speed/fullscreen buttons */}
+          {/* Right side: Volume, Speed, Fullscreen */}
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <Button onClick={handleToggleMute} variant="ghost" size="icon" className="h-8 w-8">
               {isMuted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
@@ -384,7 +386,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
               max="100"
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-24 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
+              className="w-16 md:w-24 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600"
             />
             <select
               value={playbackRate}
@@ -393,7 +395,7 @@ export const VideoPlayer = ({ url, onProgress, progress, lessonId, lessonTitle }
                 setPlaybackRate(rate);
                 playerRef.current?.setPlaybackRate(rate);
               }}
-              className="bg-gray-200 text-black rounded px-2 py-1 text-sm"
+              className="bg-gray-200 text-black rounded px-2 py-1 text-xs md:text-sm h-8"
             >
               <option value={0.5}>0.5x</option>
               <option value={1}>1x</option>

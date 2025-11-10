@@ -80,16 +80,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-sm">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-auto px-2 md:px-4 py-2 md:py-3 flex items-center justify-between">
         {/* Left section: Mobile Menu, Logo and Navigation */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           {isMobile && onMenuClick && (
-            <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden">
-              <Menu className="h-6 w-6" />
+            <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden h-8 w-8">
+              <Menu className="h-5 w-5" />
             </Button>
           )}
-          <Link to="/" className="flex items-center space-x-1 max-w-[120px] flex-shrink-0 overflow-hidden">
-            <img src="/images/font.png" alt="Company Name" className="h-6 ml-1 object-contain flex-shrink-0" />
+          <Link to="/" className="flex items-center space-x-1 max-w-[100px] md:max-w-[120px] flex-shrink-0 overflow-hidden">
+            <img src="/images/font.png" alt="Company Name" className="h-5 md:h-6 ml-1 object-contain flex-shrink-0" />
           </Link>
           <nav className="hidden md:flex items-center space-x-4">
             <Link to="/" className="hover:text-primary transition-colors flex items-center">
@@ -111,13 +111,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
         </div>
 
         {/* Right section: Search, Dashboard, Language, User Profile */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        <div className="flex items-center space-x-1 md:space-x-4">
           <div className="relative hidden md:block">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search courses..."
-              className="pl-8 w-[200px] rounded-full"
+              className="pl-8 w-[200px] rounded-full text-sm"
               value={searchTerm}
               onChange={(e) => {
                 const newSearchTerm = e.target.value;
@@ -156,7 +156,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
             </Button>
           )}
           {isAuthenticated && (
-            <Link to={userRole === 'admin' ? '/admin' : '/dashboard'} className="md:hidden hover:text-primary transition-colors">
+            <Link to={userRole === 'admin' ? '/admin' : '/dashboard'} className="md:hidden hover:text-primary transition-colors text-xs">
               Dashboard
             </Link>
           )}
@@ -164,12 +164,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center">
-                <Avatar className="h-8 w-8 border-2 border-primary">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                <Avatar className="h-7 w-7 md:h-8 md:w-8 border-2 border-primary">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-sm">
                     {username ? username.charAt(0).toUpperCase() : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <ChevronDown className="ml-0.5 md:ml-1 h-3 w-3 md:h-4 md:w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
