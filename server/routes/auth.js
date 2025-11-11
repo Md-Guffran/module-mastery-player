@@ -11,6 +11,17 @@ router.post('/signup', async (req, res) => {
   const { username, email, password, adminVerificationKey } = req.body;
 
   try {
+    // Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ msg: 'Please provide all required fields' });
+    }
+
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({ msg: 'Server configuration error. Please contact administrator.' });
+    }
+
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
@@ -18,6 +29,12 @@ router.post('/signup', async (req, res) => {
 
     let role = 'user'; // Default role
     if (adminVerificationKey) {
+      // Check if ADMIN_VERIFICATION_KEY is configured
+      if (!process.env.ADMIN_VERIFICATION_KEY) {
+        console.error('ADMIN_VERIFICATION_KEY is not configured in environment variables');
+        return res.status(500).json({ msg: 'Admin registration is not configured. Please contact administrator.' });
+      }
+      
       if (adminVerificationKey === process.env.ADMIN_VERIFICATION_KEY) {
         role = 'admin';
       } else {
@@ -40,18 +57,25 @@ router.post('/signup', async (req, res) => {
       }
     };
 
-    jwt.sign(
+    // Use Promise-based JWT signing for better error handling
+    const token = jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 3600 },
-      async (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
+      { expiresIn: 3600 }
     );
+
+    res.json({ token });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    console.error('Signup error:', err);
+    // Provide more specific error messages
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ msg: err.message });
+    }
+    if (err.code === 11000) {
+      // Duplicate key error (MongoDB) - now only for email
+      return res.status(400).json({ msg: 'Email already exists' });
+    }
+    res.status(500).json({ msg: 'Server error. Please try again later.' });
   }
 });
 
