@@ -12,6 +12,15 @@ import { minutesToSeconds, secondsToMinutes } from '../utils/duration';
 import { findVideoDuration } from '../utils/videoUtils';
 import Header from '../components/Header';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { toast } from '@/components/ui/sonner';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -76,6 +85,9 @@ const AdminDashboard: React.FC = () => {
     _id: '',
   });
   const [selectedCourseIdForModules, setSelectedCourseIdForModules] = useState<string | null>(null); // To track which course's modules are being managed
+  const [promoteUserDialogOpen, setPromoteUserDialogOpen] = useState(false);
+  const [selectedUserIdForPromotion, setSelectedUserIdForPromotion] = useState<string | null>(null);
+  const [adminKey, setAdminKey] = useState('');
 
   // Fetch course details including weeks, days, and modules
   const fetchCourseDetails = async (courseId: string) => {
@@ -138,6 +150,49 @@ const AdminDashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
+  };
+
+  const handlePromoteToAdmin = async () => {
+    if (!selectedUserIdForPromotion || !adminKey) {
+      toast.error('Error', {
+        description: 'Please enter the admin verification key',
+      });
+      return;
+    }
+
+    try {
+      const res = await api.put<{ msg: string; user: User }>(`/api/admin/users/${selectedUserIdForPromotion}/role`, {
+        adminVerificationKey: adminKey,
+      });
+      
+      toast.success('Success', {
+        description: res.msg || 'User role updated to admin successfully',
+      });
+      
+      // Update the user in the local state
+      setUsers(users.map(user => 
+        user._id === selectedUserIdForPromotion 
+          ? { ...user, role: 'admin' }
+          : user
+      ));
+      
+      // Close dialog and reset state
+      setPromoteUserDialogOpen(false);
+      setSelectedUserIdForPromotion(null);
+      setAdminKey('');
+    } catch (err: any) {
+      console.error('Failed to promote user:', err);
+      const errorMessage = err.response?.data?.msg || err.response?.data?.message || 'Failed to update user role. Please try again.';
+      toast.error('Error', {
+        description: errorMessage,
+      });
+    }
+  };
+
+  const openPromoteDialog = (userId: string) => {
+    setSelectedUserIdForPromotion(userId);
+    setAdminKey('');
+    setPromoteUserDialogOpen(true);
   };
 
   const fetchDailyActivity = async () => {
@@ -582,7 +637,7 @@ const AdminDashboard: React.FC = () => {
         <Button onClick={() => setViewMode('overview')} variant={viewMode === 'overview' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Overview</Button>
         <Button onClick={() => setViewMode('users')} variant={viewMode === 'users' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Users</Button>
         <Button onClick={() => setViewMode('activity')} variant={viewMode === 'activity' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Daily Activity</Button>
-        <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Student Progress</Button>
+        <Button onClick={() => setViewMode('progress')} variant={viewMode === 'progress' || viewMode === 'student-progress' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Progress</Button>
         <Button onClick={() => setViewMode('modules')} variant={viewMode === 'modules' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Manage Course Content</Button>
         <Button onClick={() => { setViewMode('create-course'); }} variant={viewMode === 'create-course' ? 'default' : 'outline'} className="text-xs sm:text-sm whitespace-nowrap">Create Course</Button>
       </div>
@@ -640,13 +695,25 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm sm:text-base truncate">{user.username}</p>
                       <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Role: {user.role}</p>
                     </div>
-                    <Button onClick={() => {
-                      setSelectedStudentId(user._id);
-                      setViewMode('student-progress');
-                    }} className="w-full sm:w-auto text-xs sm:text-sm">
-                      View Progress
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      <Button onClick={() => {
+                        setSelectedStudentId(user._id);
+                        setViewMode('student-progress');
+                      }} className="w-full sm:w-auto text-xs sm:text-sm">
+                        View Progress
+                      </Button>
+                      {user.role === 'user' && (
+                        <Button 
+                          onClick={() => openPromoteDialog(user._id)} 
+                          variant="outline"
+                          className="w-full sm:w-auto text-xs sm:text-sm"
+                        >
+                          Make Admin
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))
@@ -1352,7 +1419,7 @@ const AdminDashboard: React.FC = () => {
         <div className="mt-4 sm:mt-8 px-2 sm:px-0">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
             <h2 className="text-base sm:text-lg font-semibold">
-              {selectedStudentId ? `Progress for ${users.find(u => u._id === selectedStudentId)?.username || 'Unknown Student'}` : 'All Student Progress'}
+              {selectedStudentId ? `Progress for ${users.find(u => u._id === selectedStudentId)?.username || 'Unknown'}` : 'All Progress'}
             </h2>
             {selectedStudentId && (
               <Button onClick={() => { setSelectedStudentId(null); setViewMode('progress'); }} variant="outline" className="w-full sm:w-auto text-xs sm:text-sm">
@@ -1383,11 +1450,52 @@ const AdminDashboard: React.FC = () => {
                   );
                 })
             ) : (
-              <p>No student progress found.</p>
+              <p>No Progress found.</p>
             )}
           </div>
         </div>
       )}
+
+      {/* Dialog for promoting user to admin */}
+      <Dialog open={promoteUserDialogOpen} onOpenChange={setPromoteUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Promote User to Admin</DialogTitle>
+            <DialogDescription>
+              Enter the admin verification key to promote this user to admin role.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="adminKey">Admin Verification Key</Label>
+              <Input
+                id="adminKey"
+                type="password"
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                placeholder="Enter admin verification key"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePromoteToAdmin();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setPromoteUserDialogOpen(false);
+              setAdminKey('');
+              setSelectedUserIdForPromotion(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handlePromoteToAdmin}>
+              Promote to Admin
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </>
   );

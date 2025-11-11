@@ -55,6 +55,54 @@ router.get('/users', auth, isAdmin, async (req, res) => {
   }
 });
 
+// @route   PUT api/admin/users/:userId/role
+// @desc    Update user role from user to admin (requires admin verification key)
+// @access  Admin
+router.put('/users/:userId/role', auth, isAdmin, async (req, res) => {
+  try {
+    const { adminVerificationKey } = req.body;
+    const { userId } = req.params;
+
+    // Validate admin verification key
+    if (!adminVerificationKey) {
+      return res.status(400).json({ msg: 'Admin verification key is required' });
+    }
+
+    // Check if ADMIN_VERIFICATION_KEY is configured
+    if (!process.env.ADMIN_VERIFICATION_KEY) {
+      console.error('ADMIN_VERIFICATION_KEY is not configured in environment variables');
+      return res.status(500).json({ msg: 'Admin role update is not configured. Please contact administrator.' });
+    }
+
+    // Verify the admin key
+    if (adminVerificationKey !== process.env.ADMIN_VERIFICATION_KEY) {
+      return res.status(401).json({ msg: 'Invalid admin verification key' });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Check if user is already an admin
+    if (user.role === 'admin') {
+      return res.status(400).json({ msg: 'User is already an admin' });
+    }
+
+    // Update user role to admin
+    user.role = 'admin';
+    await user.save();
+
+    // Return updated user (without password)
+    const updatedUser = await User.findById(userId).select('-password');
+    res.json({ msg: 'User role updated to admin successfully', user: updatedUser });
+  } catch (err) {
+    console.error('Error updating user role:', err.message);
+    res.status(500).json({ msg: 'Server error. Please try again later.' });
+  }
+});
+
 // @route   GET api/admin/daily-activity
 // @desc    Get today's login/logout activity
 // @access  Admin
