@@ -903,12 +903,12 @@ const AdminDashboard: React.FC = () => {
                                           </Button>
                                         </div>
 
-                                        <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Assessments</h3>
+                                        <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Exercises</h3>
                                         {editedModule?.assessments?.map((assessment, assessmentIndex) => (
                                           <Card key={assessmentIndex} className="mb-4 p-3 sm:p-4 text-foreground">
                                             <CardContent>
                                               <div>
-                                                <Label htmlFor={`editedAssessmentTitle-${assessmentIndex}`}>Assessment Title</Label>
+                                                <Label htmlFor={`editedAssessmentTitle-${assessmentIndex}`}>Exercise Title</Label>
                                                 <Input
                                                   id={`editedAssessmentTitle-${assessmentIndex}`}
                                                   type="text"
@@ -924,7 +924,7 @@ const AdminDashboard: React.FC = () => {
                                                 />
                                               </div>
                                               <div className="mt-2">
-                                                <Label htmlFor={`editedAssessmentLink-${assessmentIndex}`}>Assessment Link</Label>
+                                                <Label htmlFor={`editedAssessmentLink-${assessmentIndex}`}>Exercise Link</Label>
                                                 <Input
                                                   id={`editedAssessmentLink-${assessmentIndex}`}
                                                   type="url"
@@ -950,7 +950,7 @@ const AdminDashboard: React.FC = () => {
                                                 }}
                                                 className="mt-4 text-xs sm:text-sm"
                                               >
-                                                Remove Assessment
+                                                Remove Exercise
                                               </Button>
                                             </CardContent>
                                           </Card>
@@ -961,7 +961,7 @@ const AdminDashboard: React.FC = () => {
                                               setEditedModule({ ...editedModule, assessments: [...(editedModule.assessments || []), { title: '', link: '' }] });
                                             }
                                           }} className="text-xs sm:text-sm">
-                                            <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Assessment
+                                            <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Exercise
                                           </Button>
                                           <Button onClick={handleUpdateModule} className="text-xs sm:text-sm">
                                             <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Save Changes
@@ -1191,7 +1191,7 @@ const AdminDashboard: React.FC = () => {
                     <Card key={assessmentIndex} className="mb-4 p-4 text-foreground">
                       <CardContent>
                         <div>
-                          <Label htmlFor={`newAssessmentTitle-${assessmentIndex}`}>Assessment Title</Label>
+                          <Label htmlFor={`newAssessmentTitle-${assessmentIndex}`}>Exercise Title</Label>
                           <Input
                             id={`newAssessmentTitle-${assessmentIndex}`}
                             type="text"
@@ -1205,7 +1205,7 @@ const AdminDashboard: React.FC = () => {
                           />
                         </div>
                         <div className="mt-2">
-                          <Label htmlFor={`newAssessmentLink-${assessmentIndex}`}>Assessment Link</Label>
+                          <Label htmlFor={`newAssessmentLink-${assessmentIndex}`}>Exercise Link</Label>
                           <Input
                             id={`newAssessmentLink-${assessmentIndex}`}
                             type="url"
@@ -1227,14 +1227,14 @@ const AdminDashboard: React.FC = () => {
                           }}
                           className="mt-4"
                         >
-                          Remove Assessment
+                          Remove Exercise
                         </Button>
                       </CardContent>
                     </Card>
                   ))}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" onClick={() => setNewModule({ ...newModule, assessments: [...(newModule.assessments || []), { title: '', link: '' }] })} className="text-xs sm:text-sm">
-                      <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Assessment
+                      <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Add Exercise
                     </Button>
                     <Button type="submit" disabled={selectedWeek === null || selectedDay === null} className="text-xs sm:text-sm">
                       Create Module

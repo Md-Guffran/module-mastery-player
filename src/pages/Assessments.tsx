@@ -102,7 +102,7 @@ const Assessments: React.FC = () => {
                   className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  View Assessment
+                  View Exercise
                   <ExternalLink className="w-3 h-3 ml-1" />
                 </a>
               </div>
@@ -160,7 +160,7 @@ const Assessments: React.FC = () => {
       <>
         <Header />
         <div className="flex justify-center items-center h-screen">
-          <div>Loading assessments...</div>
+          <div>Loading exercises...</div>
         </div>
       </>
     );
@@ -181,9 +181,9 @@ const Assessments: React.FC = () => {
     <>
       <Header />
       <div className="container mx-auto p-6 pt-24">
-        <h1 className="text-4xl font-bold mb-6 text-foreground">My Assessments</h1>
+        <h1 className="text-4xl font-bold mb-6 text-foreground">My Exercises</h1>
         <p className="text-muted-foreground mb-8">
-          View and manage all your assessments from enrolled courses
+          View and manage all your exercises from enrolled courses
         </p>
 
         <Tabs defaultValue="all" className="w-full">
@@ -199,8 +199,8 @@ const Assessments: React.FC = () => {
             {assessments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No assessments found.</p>
-                <p className="text-sm mt-2">Start a course to see assessments.</p>
+                <p>No exercises found.</p>
+                <p className="text-sm mt-2">Start a course to see exercises.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -213,7 +213,7 @@ const Assessments: React.FC = () => {
             {pendingAssessments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No pending assessments.</p>
+                <p>No pending exercises.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -226,7 +226,7 @@ const Assessments: React.FC = () => {
             {submittedAssessments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No submitted assessments.</p>
+                <p>No submitted exercises.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -239,7 +239,7 @@ const Assessments: React.FC = () => {
             {reviewPendingAssessments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No assessments pending review.</p>
+                <p>No exercises pending review.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -252,7 +252,7 @@ const Assessments: React.FC = () => {
             {completedAssessments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No completed assessments.</p>
+                <p>No completed exercises.</p>
               </div>
             ) : (
               <div className="space-y-4">

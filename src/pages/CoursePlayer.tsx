@@ -255,10 +255,10 @@ const CoursePlayer = () => {
         return [...prev, res.data];
       });
       setSubmittedLink('');
-      toast.success('Assessment submitted successfully!');
+      toast.success('Exercise submitted successfully!');
     } catch (err) {
-      console.error('Failed to submit assessment:', err);
-      toast.error('Failed to submit assessment.');
+      console.error('Failed to submit exercise:', err);
+      toast.error('Failed to submit exercise.');
     }
   };
 
@@ -351,7 +351,7 @@ const CoursePlayer = () => {
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'lessons' | 'assessments')}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="lessons" className="text-xs md:text-sm">Lessons</TabsTrigger>
-                <TabsTrigger value="assessments" className="text-xs md:text-sm">Assessments</TabsTrigger>
+                <TabsTrigger value="assessments" className="text-xs md:text-sm">Exercises</TabsTrigger>
               </TabsList>
               <TabsContent value="lessons">
                 <motion.div
@@ -424,7 +424,7 @@ const CoursePlayer = () => {
                         {assessment.assessmentLink && (
                           <p className="text-muted-foreground mt-2">
                             <a href={assessment.assessmentLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                              View Assessment
+                              View Exercise
                             </a>
                           </p>
                         )}

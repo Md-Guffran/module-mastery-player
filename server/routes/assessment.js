@@ -36,7 +36,7 @@ router.post('/submit', auth, async (req, res) => {
     }
 
     if (!found || !assessmentTitle || !assessmentLink) {
-      return res.status(404).json({ msg: 'Assessment not found for the specified day' });
+      return res.status(404).json({ msg: 'Exercise not found for the specified day' });
     }
 
     let userAssessment = await UserAssessmentProgress.findOneAndUpdate(
@@ -249,7 +249,7 @@ router.put('/admin/review/:assessmentProgressId', auth, async (req, res) => {
     let userAssessment = await UserAssessmentProgress.findById(req.params.assessmentProgressId);
 
     if (!userAssessment) {
-      return res.status(404).json({ msg: 'Assessment progress not found' });
+      return res.status(404).json({ msg: 'Exercise progress not found' });
     }
 
     userAssessment.status = status;

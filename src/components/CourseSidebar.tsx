@@ -128,7 +128,7 @@ export const CourseSidebar = ({
                       </div>
                       <div className="flex-1 text-left">
                         <div className="font-medium text-sm leading-tight">
-                          Assessment: {day.assessment}
+                          Exercise: {day.assessment}
                         </div>
                       </div>
                     </Button>
