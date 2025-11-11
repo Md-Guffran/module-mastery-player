@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isMobile }) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => navigate('/')}>Courses</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/assessments')}>Assessments</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/assessments')}>Exercises</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Link to="/certification" className="hover:text-primary transition-colors">

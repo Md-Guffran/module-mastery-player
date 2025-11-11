@@ -757,7 +757,7 @@ const AdminDashboard: React.FC = () => {
                                     {editingModuleId === (moduleItem._id || moduleItem.id) ? (
                                       <div className="space-y-4 p-2 sm:p-4">
                                         <div>
-                                          <Label htmlFor="editedModuleConcepts">Concepts (Optional)</Label>
+                                          <Label htmlFor="editedModuleConcepts">Concepts</Label>
                                           <textarea
                                             id="editedModuleConcepts"
                                             name="concepts"
@@ -773,7 +773,7 @@ const AdminDashboard: React.FC = () => {
                                           />
                                         </div>
                                         <div>
-                                          <Label htmlFor="editedModuleExercises">Exercises (Optional)</Label>
+                                          <Label htmlFor="editedModuleExercises">Exercises</Label>
                                           <textarea
                                             id="editedModuleExercises"
                                             name="exercises"
@@ -1186,7 +1186,7 @@ const AdminDashboard: React.FC = () => {
                     </Button>
                   </div>
 
-                  <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Assessments</h3>
+                  <h3 className="text-sm sm:text-md font-semibold mt-4 sm:mt-6 mb-2">Exercise</h3>
                   {newModule.assessments?.map((assessment, assessmentIndex) => (
                     <Card key={assessmentIndex} className="mb-4 p-4 text-foreground">
                       <CardContent>
