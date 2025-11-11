@@ -73,7 +73,6 @@ export const CourseSidebar = ({
                             description: '',
                             videoUrl: video.url,
                             duration: video.duration || 0,
-                            resources: video.resourcesUrl ? [{ title: 'Resources', url: video.resourcesUrl }] : [],
                             notes: video.notesUrl || [], // notesUrl is already an array of strings
                           };
                           const isCompleted = progress[lesson.id]?.completed;
