@@ -31,7 +31,7 @@ const api: ApiClient = {
   get: async <T>(url: string, config?: RequestInit) => {
     return fetchWrapper<T>(url, { ...config, method: 'GET' });
   },
-  post: async <T>(url: string, data?: any, config?: RequestInit) => {
+  post: async <T>(url: string, data?: unknown, config?: RequestInit) => {
     return fetchWrapper<T>(url, {
       ...config,
       method: 'POST',
@@ -42,7 +42,7 @@ const api: ApiClient = {
       body: JSON.stringify(data),
     });
   },
-  put: async <T>(url: string, data?: any, config?: RequestInit) => {
+  put: async <T>(url: string, data?: unknown, config?: RequestInit) => {
     return fetchWrapper<T>(url, {
       ...config,
       method: 'PUT',
