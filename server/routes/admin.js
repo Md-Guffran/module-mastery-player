@@ -162,26 +162,59 @@ router.post('/modules', auth, isAdmin, async (req, res) => {
 // @route   PUT api/admin/modules/:id
 // @desc    Update a module
 // @access  Admin
+// Note: If module is used by multiple courses, creates a new copy to avoid affecting other courses
 router.put('/modules/:id', auth, isAdmin, async (req, res) => {
   try {
-    const { title, concepts, exercises, videos, assessments } = req.body; // Extract all fields
+    const { title, concepts, exercises, videos, assessments, courseId } = req.body; // Extract all fields including courseId
     const moduleFields = { 
       title, 
       concepts: concepts || '',
       exercises: exercises || '',
       videos, 
       assessments 
-    }; // Include all fields in update
+    };
 
+    // Find the module
+    const existingModule = await Module.findById(req.params.id);
+    if (!existingModule) {
+      return res.status(404).json({ msg: 'Module not found' });
+    }
+
+    // Check if this module is used by multiple courses
+    const coursesUsingModule = await Course.find({
+      'weeks.days.modules': req.params.id
+    });
+
+    // If module is used by multiple courses and courseId is provided, create a new copy
+    if (coursesUsingModule.length > 1 && courseId) {
+      // Create a new module copy
+      const newModule = new Module(moduleFields);
+      const savedModule = await newModule.save();
+
+      // Update the specific course to use the new module
+      const course = await Course.findById(courseId);
+      if (course) {
+        // Find and replace the old module ID with the new one in all weeks/days
+        course.weeks.forEach(week => {
+          week.days.forEach(day => {
+            const moduleIndex = day.modules.indexOf(req.params.id);
+            if (moduleIndex !== -1) {
+              day.modules[moduleIndex] = savedModule._id;
+            }
+          });
+        });
+        await course.save();
+      }
+
+      return res.json(savedModule);
+    }
+
+    // If only used by one course or no courseId provided, update the existing module
     const module = await Module.findByIdAndUpdate(
       req.params.id,
       { $set: moduleFields },
       { new: true }
     );
-
-    if (!module) {
-      return res.status(404).json({ msg: 'Module not found' });
-    }
 
     res.json(module);
   } catch (err) {
@@ -312,15 +345,19 @@ router.post('/courses/:courseId/weeks/:weekNumber/days/:dayNumber/modules', auth
       return res.status(404).json({ msg: `Day ${dayNumber} not found in Week ${weekNumber}.` });
     }
 
+    // Always create a new module instance for this course (never reuse existing modules)
+    // This ensures each course has its own independent copy of modules
     const newModule = new Module({
       title,
       concepts: concepts || '',
       exercises: exercises || '',
-      videos,
-      assessments, // Pass assessments to the Module constructor
+      videos: videos || [],
+      assessments: assessments || [], // Pass assessments to the Module constructor
     });
 
     const savedModule = await newModule.save();
+    
+    // Add the new module to this specific day in this specific course
     day.modules.push(savedModule._id);
     await course.save();
 

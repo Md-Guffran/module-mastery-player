@@ -434,7 +434,8 @@ const AdminDashboard: React.FC = () => {
             duration: minutesToSeconds(Number(video.duration)),
             notesUrl: video.notesUrl || []
           })),
-          assessments: editedModule.assessments || []
+          assessments: editedModule.assessments || [],
+          courseId: selectedCourseIdForModules || null // Include courseId to prevent module sharing
         };
         
         // Update the module
