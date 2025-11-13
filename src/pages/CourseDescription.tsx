@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/accordion'; // Re-import Accordion components
 import { PlayCircle, FileText } from 'lucide-react';
 import { formatDurationMinutes } from '@/utils/duration';
+import { getNoteTitle } from '@/utils/noteTitles';
 import Header from '../components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Import Tabs components
@@ -254,15 +255,17 @@ const CourseDescription: React.FC = () => {
                                       {/* Collect all unique notes from videos in this module */}
                                       {(() => {
                                         const moduleNotes: string[] = [];
+                                        const seenUrls = new Set<string>();
+                                        
                                         module.videos.forEach(video => {
                                           if (video.notesUrl) {
                                             video.notesUrl.forEach(noteUrl => {
-                                              // Only include valid, non-empty note URLs
                                               const trimmed = noteUrl?.trim() || '';
                                               if (trimmed.length > 0 && 
                                                   !trimmed.toLowerCase().includes('placeholder') &&
                                                   (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) &&
-                                                  !moduleNotes.includes(trimmed)) {
+                                                  !seenUrls.has(trimmed)) {
+                                                seenUrls.add(trimmed);
                                                 moduleNotes.push(trimmed);
                                               }
                                             });
@@ -270,33 +273,28 @@ const CourseDescription: React.FC = () => {
                                         });
 
                                         if (moduleNotes.length > 0) {
+                                          // Use utility function to enrich notes with titles
+                                          const notesWithTitles = moduleNotes.map(url => ({
+                                            url,
+                                            title: getNoteTitle(url)
+                                          }));
+                                          
                                           return (
                                             <div className="pl-4 pb-2">
                                               <h5 className="text-sm font-semibold text-foreground mb-1">Notes:</h5>
                                               <ul className="list-disc list-inside space-y-1">
-                                                {moduleNotes.map((noteUrl, noteIndex) => {
-                                                  // Extract filename from URL, or use a meaningful default
-                                                  let noteTitle = noteUrl.substring(noteUrl.lastIndexOf('/') + 1);
-                                                  // If no filename found or it's empty, use the domain or a generic name
-                                                  if (!noteTitle || noteTitle.trim() === '' || noteTitle === noteUrl) {
-                                                    try {
-                                                      const urlObj = new URL(noteUrl.startsWith('/') ? `http://localhost${noteUrl}` : noteUrl);
-                                                      noteTitle = urlObj.hostname || 'Note';
-                                                    } catch {
-                                                      noteTitle = 'Note';
-                                                    }
-                                                  }
-                                                  // Remove query parameters and fragments from title
-                                                  noteTitle = noteTitle.split('?')[0].split('#')[0];
-                                                  
-                                                  return (
-                                                    <li key={noteIndex} className="text-sm">
-                                                      <a href={noteUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
-                                                        {noteTitle}
-                                                      </a>
-                                                    </li>
-                                                  );
-                                                })}
+                                                {notesWithTitles.map((note, noteIndex) => (
+                                                  <li key={noteIndex} className="text-sm">
+                                                    <a 
+                                                      href={note.url} 
+                                                      target="_blank" 
+                                                      rel="noopener noreferrer" 
+                                                      className="hover:underline text-blue-500"
+                                                    >
+                                                      {note.title}
+                                                    </a>
+                                                  </li>
+                                                ))}
                                               </ul>
                                             </div>
                                           );

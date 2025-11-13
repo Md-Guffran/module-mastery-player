@@ -2,6 +2,7 @@ import { Link as LinkIcon, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getNoteTitle, enrichNotesWithTitles } from '@/utils/noteTitles';
 
 interface ResourceItem {
   title?: string;
@@ -19,35 +20,18 @@ export const ResourcesSection = ({ notes, lessonTitle }: ResourcesSectionProps) 
     ? notes
         .map((note) => {
           const rawNoteUrl = typeof note === 'string' ? note : note?.url;
-          const noteUrl = typeof rawNoteUrl === 'string' ? rawNoteUrl.trim() : '';
-          const noteTitle = typeof note === 'string' ? undefined : note?.title;
-          return { noteUrl, noteTitle };
+          return typeof rawNoteUrl === 'string' ? rawNoteUrl.trim() : '';
         })
-        .filter(({ noteUrl }) => {
+        .filter((noteUrl) => {
           // Only include valid, non-empty note URLs
           return noteUrl.length > 0 && 
                  !noteUrl.toLowerCase().includes('placeholder') &&
                  (noteUrl.startsWith('http://') || noteUrl.startsWith('https://') || noteUrl.startsWith('/'));
         })
-        .map(({ noteUrl, noteTitle }) => {
-          // Extract title from URL if not provided
-          let title = noteTitle;
-          if (!title) {
-            let extractedTitle = noteUrl.substring(noteUrl.lastIndexOf('/') + 1);
-            // If no filename found or it's empty, use the domain or a generic name
-            if (!extractedTitle || extractedTitle.trim() === '' || extractedTitle === noteUrl) {
-              try {
-                const urlObj = new URL(noteUrl.startsWith('/') ? `http://localhost${noteUrl}` : noteUrl);
-                extractedTitle = urlObj.hostname || 'Note';
-              } catch {
-                extractedTitle = 'Note';
-              }
-            }
-            // Remove query parameters and fragments from title
-            title = extractedTitle.split('?')[0].split('#')[0];
-          }
-          return { noteUrl, noteTitle: title };
-        })
+        .map((noteUrl) => ({
+          noteUrl,
+          noteTitle: getNoteTitle(noteUrl) // Use utility function to get title
+        }))
     : [];
 
   return (
