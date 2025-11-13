@@ -218,8 +218,35 @@ const CourseDescription: React.FC = () => {
                                         </div>
                                       )}
                                      
-      <div className="pl-4 pb-2">
-  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Notes:</h2>
+    
+
+                                            <div className="pl-4 pb-2">
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Videos:</h2>
+</div>
+
+                                      {/* Display Videos */}
+                                      {module.videos && module.videos.length > 0 ? (
+                                        <div className="pl-4 pb-2">
+                                          <h5 className="text-sm font-semibold text-foreground mb-1">Videos:</h5>
+                                          {module.videos.map((video, videoIndex) => (
+                                            <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-2 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
+                                              <div className="flex items-center">
+                                                <PlayCircle className="h-4 w-4 mr-2 text-primary" />
+                                                <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
+                                                  <span>{video.title}</span>
+                                                </Link>
+                                              </div>
+                                              <span className="text-xs text-gray-500">
+                                                {formatDurationMinutes(video.duration || 0)}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="p-2 text-sm text-muted-foreground pl-4">No videos in this module.</p>
+                                      )}
+                                        <div className="pl-4 pb-2">
+  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Readings:</h2>
 </div>
 
                                      
@@ -276,32 +303,6 @@ const CourseDescription: React.FC = () => {
                                         }
                                         return null;
                                       })()}
-
-                                            <div className="pl-4 pb-2">
-  <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Videos:</h2>
-</div>
-
-                                      {/* Display Videos */}
-                                      {module.videos && module.videos.length > 0 ? (
-                                        <div className="pl-4 pb-2">
-                                          <h5 className="text-sm font-semibold text-foreground mb-1">Videos:</h5>
-                                          {module.videos.map((video, videoIndex) => (
-                                            <div key={video._id || video.id || videoIndex} className="flex items-center justify-between py-2 pl-2 pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-in-out rounded-b-lg">
-                                              <div className="flex items-center">
-                                                <PlayCircle className="h-4 w-4 mr-2 text-primary" />
-                                                <Link to={`/course-player/${courseId}/${module._id || module.id}/${video._id || video.id}`} className="hover:underline text-sm">
-                                                  <span>{video.title}</span>
-                                                </Link>
-                                              </div>
-                                              <span className="text-xs text-gray-500">
-                                                {formatDurationMinutes(video.duration || 0)}
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <p className="p-2 text-sm text-muted-foreground pl-4">No videos in this module.</p>
-                                      )}
                                             <div className="pl-4 pb-2">
   <h2 className="text-lg font-semibold text-red-600 mb-1 border-b-2 border-blue-600 inline-block">Recommended Exercises:</h2>
 </div>
